@@ -1,0 +1,9 @@
+nul
+.playwright-mcp/
+.vscode/
+node_modules/
+*.log
+.env
+.env.backup
+.env.production
+test_mcp.docx

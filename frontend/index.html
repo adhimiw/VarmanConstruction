@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Critical: Preconnect & DNS Prefetch for external origins (must be first) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://resource.trickle.so">
+  <link rel="preconnect" href="https://resource.trickle.so" crossorigin>
+
+  <!-- Preload LCP image for faster Largest Contentful Paint -->
+  <link rel="preload" as="image" href="/assets/hero.png" fetchpriority="high">
+
+  <meta name="theme-color" content="#E55A2B">
+
+  <!-- Primary SEO Meta Tags - Optimized for GEO/AEO -->
+  <title>VARMAN CONSTRUCTIONS - #1 Building Materials Supplier in Tamil Nadu | M-Sand, Blue Metal, Cement, Bricks
+  </title>
+  <meta name="description"
+    content="VARMAN CONSTRUCTIONS is Tamil Nadu's trusted building materials supplier since 2020. We supply premium M-Sand, P-Sand, Blue Metal (6mm-40mm), Red Bricks, Fly Ash Bricks, AAC Blocks, and Cement with 24-48 hour delivery across Tamil Nadu. 200+ projects completed. Call +91 77084 84811 for instant quotes.">
+  <meta name="keywords"
+    content="building materials supplier Tamil Nadu, M-Sand supplier Chennai, Blue Metal supplier Tamil Nadu, construction materials Tamil Nadu, cement wholesale Tamil Nadu, AAC blocks supplier, bricks supplier Tamil Nadu, VARMAN CONSTRUCTIONS, best building materials Tamil Nadu">
+
+  <!-- Additional SEO Meta Tags -->
+  <meta name="author" content="VARMAN CONSTRUCTIONS">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="googlebot" content="index, follow">
+  <link rel="canonical" href="https://varmanconstructions.in/">
+
+  <!-- Geo Meta Tags for Local SEO -->
+  <meta name="geo.region" content="IN-TN">
+  <meta name="geo.placename" content="Tamil Nadu, India">
+  <meta name="geo.position" content="11.1271;78.6569">
+  <meta name="ICBM" content="11.1271, 78.6569">
+
+  <!-- SEO & SECURITY ANALYTICS TRACKING (deferred to not block rendering) -->
+  <script defer>
+    (function () {
+      var apiBase = '';
+      var isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+      var clickTimer = null;
+
+      function sendAnalytics(payload) {
+        if (isLocal) {
+          return;
+        }
+
+        var url = apiBase + '/api/analytics/track';
+        var body = JSON.stringify(payload);
+
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
+          return;
+        }
+
+        fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: body,
+          keepalive: true
+        }).catch(function () { });
+      }
+
+      window.addEventListener('load', function () {
+        sendAnalytics({ type: 'view', page: window.location.pathname });
+      });
+
+      document.addEventListener('click', function (event) {
+        var target = event.target.closest('button, a, .clickable');
+        if (!target || target.tagName === 'BODY') {
+          return;
+        }
+
+        var elementId = target.id || (target.innerText ? target.innerText.trim().slice(0, 32) : target.tagName);
+        clearTimeout(clickTimer);
+        clickTimer = window.setTimeout(function () {
+          sendAnalytics({ type: 'click', element: elementId, page: window.location.pathname });
+        }, 150);
+      }, { passive: true });
+    })();
+  </script>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/assets/logo.png?v=20260314">
+  <link rel="shortcut icon" type="image/png" href="/assets/logo.png?v=20260314">
+  <link rel="alternate icon" href="/assets/logo.png?v=20260314">
+  <link rel="apple-touch-icon" href="/assets/logo.png?v=20260314">
+
+  <!-- Open Graph Meta Tags - Enhanced for Social & AI -->
+  <meta property="og:title" content="VARMAN CONSTRUCTIONS - #1 Building Materials Supplier in Tamil Nadu">
+  <meta property="og:description"
+    content="Premium quality M-Sand, Blue Metal, Cement, Bricks & AAC Blocks. 200+ projects completed since 2020. Fast 24-48 hour delivery across Tamil Nadu. Call +91 77084 84811">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://varmanconstructions.in">
+  <meta property="og:image" content="https://varmanconstructions.in/assets/logo.png">
+  <meta property="og:site_name" content="VARMAN CONSTRUCTIONS">
+  <meta property="og:locale" content="en_IN">
+
+  <!-- Twitter Meta Tags - Enhanced -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="VARMAN CONSTRUCTIONS - Premium Building Materials Supplier Tamil Nadu">
+  <meta name="twitter:description"
+    content="Tamil Nadu's trusted building materials supplier since 2020. M-Sand, Blue Metal, Cement, Bricks with 24-48hr delivery. 200+ projects completed.">
+  <meta name="twitter:image" content="https://varmanconstructions.in/assets/logo.png">
+
+  <!-- HomeAndConstructionBusiness Schema (More Specific for GEO) -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HomeAndConstructionBusiness",
+      "@id": "https://varmanconstructions.in/#organization",
+      "name": "VARMAN CONSTRUCTIONS",
+      "alternateName": "Varman Constructions Tamil Nadu",
+      "description": "VARMAN CONSTRUCTIONS is Tamil Nadu's leading building materials supplier, providing premium quality M-Sand, Blue Metal, Cement, Bricks, and AAC Blocks since 2020. We have successfully completed 200+ construction projects with our commitment to quality materials and fast 24-48 hour delivery service across Tamil Nadu.",
+      "foundingDate": "2020",
+      "telephone": ["+917708484811", "+919965237777"],
+      "email": "info@varmanconstructions.in",
+      "url": "https://varmanconstructions.in",
+      "logo": "https://varmanconstructions.in/assets/logo.png",
+      "image": "https://varmanconstructions.in/assets/logo.png",
+      "priceRange": "₹₹",
+      "currenciesAccepted": "INR",
+      "paymentAccepted": "Cash, UPI, Bank Transfer, Credit Card, Google Pay, PhonePe, Paytm",
+      "openingHours": "Mo-Sa 08:00-20:00",
+      "areaServed": [
+        {
+          "@type": "State",
+          "name": "Tamil Nadu",
+          "containedInPlace": {
+            "@type": "Country",
+            "name": "India"
+          }
+        },
+        {
+          "@type": "City",
+          "name": "Chennai"
+        },
+        {
+          "@type": "City", 
+          "name": "Coimbatore"
+        },
+        {
+          "@type": "City",
+          "name": "Madurai"
+        },
+        {
+          "@type": "City",
+          "name": "Trichy"
+        },
+        {
+          "@type": "City",
+          "name": "Salem"
+        }
+      ],
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": "11.1271",
+        "longitude": "78.6569"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "reviewCount": "200",
+        "bestRating": "5",
+        "worstRating": "1"
+      },
+      "numberOfEmployees": {
+        "@type": "QuantitativeValue",
+        "minValue": "10",
+        "maxValue": "50"
+      },
+      "knowsAbout": [
+        "M-Sand Manufacturing",
+        "Blue Metal Supply", 
+        "Construction Materials",
+        "Cement Distribution",
+        "Brick Supply",
+        "AAC Blocks",
+        "Building Materials Logistics"
+      ],
+      "slogan": "Building Tamil Nadu's Future with Quality Materials",
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Building Materials Catalog",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Product",
+              "name": "M-Sand (Manufactured Sand)",
+              "description": "Premium quality manufactured sand with fineness modulus 2.6-3.0, less than 3% silt content. Ideal for concrete mixing, plastering, and foundation work.",
+              "material": "Crushed Granite",
+              "category": "Construction Aggregates"
+            }
+          },
+          {
+            "@type": "Offer", 
+            "itemOffered": {
+              "@type": "Product",
+              "name": "Blue Metal / Jalli",
+              "description": "High-quality crushed blue granite stone available in 6mm, 10mm, 12mm, 20mm, and 40mm sizes for concrete and road construction.",
+              "material": "Blue Granite",
+              "category": "Construction Aggregates"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Product", 
+              "name": "Red Bricks",
+              "description": "Traditional kiln-fired clay bricks (9x4.5x3 inches) with compressive strength >3.5 N/mm². Fire resistant and excellent thermal insulation.",
+              "material": "Clay",
+              "category": "Masonry Materials"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Product",
+              "name": "Fly Ash Bricks",
+              "description": "Eco-friendly bricks with higher strength (>7.5 N/mm²), uniform size, and lower water absorption (<12%). Ideal for high-rise buildings.",
+              "material": "Fly Ash Composite",
+              "category": "Masonry Materials"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Product",
+              "name": "AAC Blocks",
+              "description": "Lightweight autoclaved aerated concrete blocks (600x200x100mm to 600x200x300mm). Excellent thermal insulation, fire resistant, and earthquake resistant.",
+              "material": "Autoclaved Aerated Concrete",
+              "category": "Masonry Materials"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Product",
+              "name": "Cement",
+              "description": "Premium cement from top brands including UltraTech, ACC, Ramco, Dalmia, and Chettinad. Available in OPC 43, OPC 53, and PPC grades.",
+              "brand": ["UltraTech", "ACC", "Ramco", "Dalmia", "Chettinad"],
+              "category": "Binding Materials"
+            }
+          }
+        ]
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+917708484811",
+        "contactType": "customer service",
+        "availableLanguage": ["English", "Tamil", "Hindi"],
+        "areaServed": "Tamil Nadu"
+      },
+      "sameAs": [
+        "https://www.facebook.com/varmanconstructions",
+        "https://www.instagram.com/varmanconstructions",
+        "https://www.linkedin.com/company/varmanconstructions"
+      ]
+    }
+    </script>
+
+  <!-- FAQ Schema - Enhanced for GEO/AEO with Conversational Questions -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Who is the best building materials supplier in Tamil Nadu?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "VARMAN CONSTRUCTIONS is one of the most trusted building materials suppliers in Tamil Nadu since 2020. We have completed 200+ projects and supply premium quality M-Sand, Blue Metal, Cement, Bricks, and AAC Blocks with 24-48 hour delivery across Tamil Nadu. Contact us at +91 77084 84811."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where can I buy M-Sand in Tamil Nadu?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You can buy high-quality M-Sand from VARMAN CONSTRUCTIONS. We supply premium manufactured sand with fineness modulus 2.6-3.0 and less than 3% silt content. We deliver M-Sand across Tamil Nadu including Chennai, Coimbatore, Madurai, Trichy, and Salem. Minimum order: 5 cubic meters. Call +91 77084 84811 for instant quotes."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the delivery time for building materials in Tamil Nadu?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "VARMAN CONSTRUCTIONS delivers within 24-48 hours for most materials within Tamil Nadu. For large orders or distant locations, delivery is typically within 2-3 days. We have our own fleet of trucks ensuring reliable and timely delivery to your construction site."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What are the minimum order quantities for construction materials?",
+          "acceptedAnswer": {
+            "@type": "Answer", 
+            "text": "Minimum orders at VARMAN CONSTRUCTIONS vary by material: M-Sand/P-Sand (5 cubic meters), Blue Metal (3 cubic meters), Red Bricks (5,000 pieces), Cement (100 bags), AAC Blocks (1 cubic meter). We offer competitive bulk pricing for larger orders."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you provide quality certificates for building materials?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, VARMAN CONSTRUCTIONS provides quality certificates, test reports, and compliance documentation for all materials. This includes IS certification for cement, test reports for aggregates (M-Sand, Blue Metal), and quality assurance certificates for bricks and blocks. All our materials meet Indian Standard specifications."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What payment methods does VARMAN CONSTRUCTIONS accept?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We accept multiple payment methods: Cash on Delivery (COD), Bank Transfer (NEFT/RTGS), Cheques, and digital payments including Google Pay, PhonePe, Paytm, and UPI. We also offer credit terms for established contractors and builders after verification."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the difference between M-Sand and P-Sand?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "M-Sand (Manufactured Sand) has fineness modulus 2.6-3.0 and is used for concrete mixing, block work, and foundation construction. P-Sand (Plastering Sand) is finer with modulus 1.8-2.2 and is specifically designed for wall plastering and ceiling work to achieve smooth finishes. Both are available at VARMAN CONSTRUCTIONS."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which cement brands does VARMAN CONSTRUCTIONS supply?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "VARMAN CONSTRUCTIONS supplies cement from all major Indian brands including UltraTech, ACC, Ramco, Dalmia, and Chettinad. We offer OPC 43 Grade, OPC 53 Grade, and PPC Grade cement. All cement is fresh stock with proper storage to maintain quality."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What sizes of Blue Metal are available?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "VARMAN CONSTRUCTIONS supplies Blue Metal (Jalli) in multiple sizes: 6mm (fine aggregate), 10mm (concrete work), 12mm (RCC work), 20mm (standard concrete), and 40mm (road construction and foundations). All sizes are high-quality crushed blue granite with excellent strength and durability."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why choose AAC Blocks over traditional bricks?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "AAC Blocks from VARMAN CONSTRUCTIONS offer several advantages: 3x lighter than traditional bricks, excellent thermal insulation reducing AC costs, fire resistant for 4+ hours, earthquake resistant due to lightweight, faster construction saving 20% time, and eco-friendly. Ideal for high-rise buildings and green construction projects in Tamil Nadu."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does VARMAN CONSTRUCTIONS deliver to Chennai?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, VARMAN CONSTRUCTIONS delivers all building materials to Chennai and surrounding areas within 24-48 hours. We supply M-Sand, Blue Metal, Cement, Bricks, and AAC Blocks to residential, commercial, and industrial construction projects across Chennai. Call +91 77084 84811 for Chennai deliveries."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How many years has VARMAN CONSTRUCTIONS been in business?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "VARMAN CONSTRUCTIONS was established in 2020 and has over 5 years of experience in the building materials supply industry. Despite being relatively new, we have rapidly grown to complete 200+ construction projects across Tamil Nadu, earning trust through quality materials and reliable service."
+          }
+        }
+      ]
+    }
+    </script>
+
+  <!-- WebSite Schema for Sitelinks Search Box -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "VARMAN CONSTRUCTIONS",
+      "alternateName": "Varman Constructions Tamil Nadu",
+      "url": "https://varmanconstructions.in",
+      "description": "Tamil Nadu's trusted building materials supplier - M-Sand, Blue Metal, Cement, Bricks, AAC Blocks",
+      "publisher": {
+        "@id": "https://varmanconstructions.in/#organization"
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://varmanconstructions.in/?search={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+  <!-- BreadcrumbList Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://varmanconstructions.in/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Products",
+          "item": "https://varmanconstructions.in/#services"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "About Us",
+          "item": "https://varmanconstructions.in/#about"
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "name": "FAQ",
+          "item": "https://varmanconstructions.in/#faq"
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "name": "Contact",
+          "item": "https://varmanconstructions.in/#contact"
+        }
+      ]
+    }
+    </script>
+
+  <!-- Article Schema for Content Authority -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Premium Building Materials Supplier in Tamil Nadu - VARMAN CONSTRUCTIONS",
+      "description": "Learn about VARMAN CONSTRUCTIONS, Tamil Nadu's trusted supplier of M-Sand, Blue Metal, Cement, Bricks, and AAC Blocks since 2020. 200+ projects completed with 24-48 hour delivery.",
+      "author": {
+        "@type": "Organization",
+        "name": "VARMAN CONSTRUCTIONS",
+        "url": "https://varmanconstructions.in"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "VARMAN CONSTRUCTIONS",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://varmanconstructions.in/assets/logo.png"
+        }
+      },
+      "datePublished": "2020-01-01",
+      "dateModified": "2026-04-11",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://varmanconstructions.in/"
+      },
+      "about": [
+        "Building Materials",
+        "Construction Supplies",
+        "M-Sand",
+        "Blue Metal",
+        "Cement",
+        "Bricks",
+        "AAC Blocks",
+        "Tamil Nadu Construction Industry"
+      ]
+    }
+    </script>
+
+  
+  
+  <link rel="stylesheet" href="/src/index.css">
+  <!-- Lucide CSS removed: 77KB with 76KB unused. Icons are inline SVGs in components -->
+
+  <!-- Enhanced Tailwind CSS with VARMAN CONSTRUCTIONS branding - White & Orange Theme -->
+  <style type="text/css">
+    @layer theme {
+        :root {
+            /* White & Orange Theme - VARMAN CONSTRUCTIONS - Enhanced Contrast */
+            --primary-color: #E55A2B;        /* Darker orange for better contrast */
+            --secondary-color: #FF8C42;
+            --accent-color: #FF7A00;         /* Slightly darker orange */
+            --dark-primary: #FFFFFF;
+            --dark-secondary: #F8F9FA;
+            --text-primary: #1A1A1A;         /* High contrast dark text */
+            --text-secondary: #2D3748;       /* Darker secondary text for better readability */
+            --text-light: #1A1A1A;
+            --text-muted: #4A5568;           /* Improved contrast for muted text */
+            --background-primary: #FFFFFF;
+            --background-secondary: #F7FAFC; /* Slightly cooler white */
+            --background-card: #FFFFFF;
+            --border-color: #E2E8F0;         /* Subtle border with better visibility */
+            --border-light: #CBD5E0;
+            --shadow-color: rgba(229, 90, 43, 0.25);  /* Updated shadow with new primary */
+            --glow-orange: rgba(229, 90, 43, 0.6);
+            --glow-orange-light: rgba(255, 140, 66, 0.4);
+            --pattern-orange: #E55A2B;
+            --pattern-orange-light: #FF8C42;
+
+            /* Additional contrast colors for accessibility */
+            --text-on-orange: #FFFFFF;       /* White text on orange backgrounds */
+            --orange-hover: #D14D1F;         /* Darker orange for hover states */
+            --success-color: #38A169;        /* Green for success states */
+            --warning-color: #D69E2E;        /* Amber for warnings */
+            --error-color: #E53E3E;          /* Red for errors */
+
+            /* Hero section text colors for brighter background */
+            --hero-text-primary: #FFFFFF;    /* Primary white text on hero */
+            --hero-text-secondary: #F5F5F5;   /* Lighter text for descriptions */
+            --hero-text-accent: #FF8C42;      /* Accent orange for highlights */
+            --hero-text-glow: #FFB366;       /* Glowing orange for materials */
+            --hero-text-shadow: rgba(0, 0, 0, 0.7); /* Text shadow for readability */
+        }
+    }
+
+    @layer base {
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Work Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--background-primary);
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Outfit', 'Work Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--text-primary);
+            letter-spacing: -0.025em;
+        }
+
+        h1 { font-size: 3.5rem; font-weight: 800; }
+        h2 { font-size: 2.5rem; font-weight: 700; }
+        h3 { font-size: 1.875rem; font-weight: 600; }
+        h4 { font-size: 1.5rem; font-weight: 600; }
+        h5 { font-size: 1.25rem; font-weight: 500; }
+        h6 { font-size: 1.125rem; font-weight: 500; }
+
+        p {
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+    }
+
+    @layer components {
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: var(--text-on-orange);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            letter-spacing: 0.025em;
+            text-transform: uppercase;
+            transition: all 0.4s ease;
+            border: 2px solid var(--primary-color);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--glow-orange-light), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--orange-hover);
+            color: var(--text-on-orange);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px var(--shadow-color);
+            border-color: var(--orange-hover);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--primary-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            letter-spacing: 0.025em;
+            text-transform: uppercase;
+            transition: all 0.4s ease;
+            border: 2px solid var(--primary-color);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-secondary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-color);
+            transition: left 0.4s ease;
+            z-index: -1;
+        }
+
+        .btn-secondary:hover::before {
+            left: 0;
+        }
+
+        .btn-secondary:hover {
+            color: var(--text-on-orange);
+            border-color: var(--orange-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px var(--shadow-color);
+            text-shadow: none;
+        }
+
+        .section-padding {
+            padding: 4rem 1rem;
+            scroll-margin-top: 120px;
+        }
+
+        .container-max {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .deferred-section {
+            content-visibility: auto;
+            contain-intrinsic-size: 900px;
+        }
+
+        /* Header specific styling for tight logo alignment */
+        header .max-w-full {
+            max-width: 100%;
+            margin: 0;
+        }
+
+        .card-shadow {
+            background-color: var(--background-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        }
+
+        .card-shadow:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-light);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.8s ease-out;
+        }
+
+        .animate-scale-in {
+            animation: scaleIn 0.5s ease-out;
+        }
+    }
+
+    @layer utilities {
+        .text-gradient {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Gypsy-Style Hexagonal Pattern Background */
+        .hexagon-pattern {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hexagon-pattern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--background-primary);
+            background-image:
+                radial-gradient(circle at 25% 25%, var(--pattern-orange) 3px, transparent 3px),
+                radial-gradient(circle at 75% 75%, var(--pattern-orange-light) 2px, transparent 2px),
+                radial-gradient(circle at 50% 50%, var(--pattern-orange) 1px, transparent 1px);
+            background-size: 60px 60px, 40px 40px, 80px 80px;
+            background-position: 0 0, 30px 30px, 20px 20px;
+            opacity: 0.1;
+            z-index: 1;
+        }
+
+        .hexagon-pattern::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 80%, var(--glow-orange) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, var(--glow-orange-light) 0%, transparent 50%),
+                radial-gradient(ellipse at 40% 40%, var(--pattern-orange) 0%, transparent 30%);
+            opacity: 0.05;
+            z-index: 2;
+        }
+
+        /* Organic Curve Overlay */
+        .organic-curves {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .organic-curves::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background:
+                radial-gradient(ellipse at 30% 70%, var(--pattern-orange) 0%, transparent 40%),
+                radial-gradient(ellipse at 70% 30%, var(--pattern-orange-light) 0%, transparent 35%);
+            opacity: 0.03;
+            z-index: 1;
+        }
+
+
+
+
+
+
+
+
+
+        .bg-dark {
+            background-color: var(--background-primary);
+        }
+
+        .bg-dark-secondary {
+            background-color: var(--background-secondary);
+        }
+
+        .bg-card {
+            background-color: var(--background-card);
+        }
+
+        .border-subtle {
+            border: 1px solid var(--border-color);
+        }
+
+        .shadow-subtle {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        }
+
+        .shadow-elevated {
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+        }
+    }
+    </style>
+
+  <!-- Gypsy-Style Keyframe Animations -->
+  <style>
+    /* Fix for 1920x1080 (Full HD) screens - reduce Hero gap */
+    @media screen and (min-width: 1920px) and (max-height: 1080px),
+    screen and (min-width: 1280px) and (max-height: 1080px) {
+      #home {
+        min-height: calc(100vh - 100px) !important;
+      }
+
+      #home .container-max {
+        padding-bottom: 1rem !important;
+      }
+    }
+
+    /* General fix for screens with height around 1080px */
+    @media screen and (max-height: 1100px) and (min-height: 900px) {
+      #home {
+        min-height: auto !important;
+      }
+
+      #home .container-max {
+        padding-top: 6rem !important;
+        padding-bottom: 2rem !important;
+      }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* Loading states */
+    .loading {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      background-color: var(--background-secondary);
+      border-radius: 0.375rem;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    /* Smooth scrolling enhancement */
+    @media (prefers-reduced-motion: no-preference) {
+      html {
+        scroll-behavior: smooth;
+      }
+    }
+
+    /* Responsive typography */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2.5rem;
+      }
+
+      h2 {
+        font-size: 2rem;
+      }
+
+      h3 {
+        font-size: 1.5rem;
+      }
+
+      .section-padding {
+        padding: 3rem 1rem;
+        scroll-margin-top: 80px;
+      }
+    }
+
+    /* Performance optimizations */
+    img {
+      max-width: 100%;
+    }
+
+    /* Reduce motion for users who prefer it */
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Work+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
+</html>
