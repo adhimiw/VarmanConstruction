@@ -114,8 +114,9 @@ class PublicApiController extends Controller
         $adminEmailBody = "New Contact Form Submission:\n\nName: {$name}\nEmail: {$email}\nPhone: {$phone}\nMaterial: {$material}\nProject Location: {$projectLocation}\n\nMessage:\n{$message}\n\nWhatsApp (Admin): {$whatsappAdminUrl}\nWhatsApp (User): {$whatsappUserUrl}\n";
         $emailSentAdmin = $this->support->sendEmailNotification('New Contact Form - Varman Constructions', $adminEmailBody);
 
-        $userEmailBody = "Hi {$name},\n\nThank you for contacting VARMAN CONSTRUCTIONS!\n\nWe received your inquiry and our team will get back to you shortly.\n\nSummary:\nMaterial: {$material}\nProject Location: {$projectLocation}\nMessage: {$message}\n\nRegards,\nVARMAN CONSTRUCTIONS\nhttps://varmanconstructions.in";
-        $emailSentUser = $this->support->sendEmailNotification('Thanks for contacting Varman Constructions', $userEmailBody, $email);
+        $reference = gmdate('Ymd-His');
+        $userEmailHtml = $this->support->buildClientThankYouEmail($name, $material, $projectLocation, $message, $reference);
+        $emailSentUser = $this->support->sendEmailNotification('Thank you for contacting Varman Constructions', $userEmailHtml, $email, true);
 
         return response()->json([
             'success' => true,

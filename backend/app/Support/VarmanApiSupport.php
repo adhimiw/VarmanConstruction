@@ -165,7 +165,7 @@ class VarmanApiSupport
         return true;
     }
 
-    public function sendEmailNotification(string $subject, string $body, ?string $to = null): bool
+    public function sendEmailNotification(string $subject, string $body, ?string $to = null, bool $isHtml = false): bool
     {
         $recipient = $to ?: (string) config('varman.admin_email');
 
@@ -174,14 +174,116 @@ class VarmanApiSupport
         }
 
         try {
-            Mail::raw($body, function ($message) use ($recipient, $subject) {
-                $message->to($recipient)->subject($subject);
-            });
+            if ($isHtml) {
+                Mail::html($body, function ($message) use ($recipient, $subject) {
+                    $message->to($recipient)->subject($subject);
+                });
+            } else {
+                Mail::raw($body, function ($message) use ($recipient, $subject) {
+                    $message->to($recipient)->subject($subject);
+                });
+            }
 
             return true;
         } catch (Throwable) {
             return false;
         }
+    }
+
+    public function buildClientThankYouEmail(string $name, string $material, string $projectLocation, string $message, string $reference): string
+    {
+        $siteName = 'VARMAN CONSTRUCTIONS';
+        $siteUrl = (string) config('app.url', 'https://varmanconstructions.in');
+        $adminEmail = (string) config('varman.admin_email', 'info@varmanconstructions.in');
+        $whatsapp = (string) config('varman.admin_whatsapp', '917708484811');
+        $whatsappUrl = "https://wa.me/{$whatsapp}";
+
+        return <<<HTML
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+          <title>Thank You – {$siteName}</title>
+        </head>
+        <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+                  <!-- Header -->
+                  <tr>
+                    <td style="background:#f97316;padding:24px 32px;text-align:center;">
+                      <h1 style="margin:0;color:#ffffff;font-size:24px;letter-spacing:1px;">{$siteName}</h1>
+                      <p style="margin:4px 0 0;color:#fff7ed;font-size:13px;">#1 Building Materials Supplier in Tamil Nadu</p>
+                    </td>
+                  </tr>
+
+                  <!-- Body -->
+                  <tr>
+                    <td style="padding:32px;">
+                      <h2 style="margin:0 0 8px;color:#1c1917;font-size:20px;">Thank you, {$name}! 🙏</h2>
+                      <p style="margin:0 0 20px;color:#57534e;font-size:15px;line-height:1.6;">
+                        We've received your inquiry and our team will get back to you within <strong>24 hours</strong>.
+                      </p>
+
+                      <!-- Summary box -->
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff7ed;border-left:4px solid #f97316;border-radius:4px;margin-bottom:24px;">
+                        <tr>
+                          <td style="padding:16px 20px;">
+                            <p style="margin:0 0 10px;font-size:13px;font-weight:bold;color:#9a3412;text-transform:uppercase;letter-spacing:0.5px;">Your Inquiry Summary</p>
+                            <table cellpadding="4" cellspacing="0" width="100%" style="font-size:14px;color:#292524;">
+                              <tr><td style="color:#78716c;width:120px;">Material:</td><td><strong>{$material}</strong></td></tr>
+                              <tr><td style="color:#78716c;">Location:</td><td>{$projectLocation}</td></tr>
+                              <tr><td style="color:#78716c;vertical-align:top;">Message:</td><td>{$message}</td></tr>
+                              <tr><td style="color:#78716c;">Reference:</td><td style="font-family:monospace;font-size:12px;">{$reference}</td></tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <p style="margin:0 0 20px;color:#57534e;font-size:14px;line-height:1.6;">
+                        In the meantime, feel free to reach us directly:
+                      </p>
+
+                      <!-- CTA buttons -->
+                      <table cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="padding-right:12px;">
+                            <a href="{$whatsappUrl}" style="display:inline-block;background:#25d366;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:6px;font-size:14px;font-weight:bold;">
+                              WhatsApp Us
+                            </a>
+                          </td>
+                          <td>
+                            <a href="mailto:{$adminEmail}" style="display:inline-block;background:#f97316;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:6px;font-size:14px;font-weight:bold;">
+                              Email Us
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background:#1c1917;padding:20px 32px;text-align:center;">
+                      <p style="margin:0;color:#a8a29e;font-size:12px;">
+                        © 2026 {$siteName} · <a href="{$siteUrl}" style="color:#f97316;text-decoration:none;">{$siteUrl}</a>
+                      </p>
+                      <p style="margin:6px 0 0;color:#78716c;font-size:11px;">
+                        You received this because you contacted us via our website.
+                      </p>
+                    </td>
+                  </tr>
+
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+        HTML;
     }
 
     public function productFromRow(array $row): array
