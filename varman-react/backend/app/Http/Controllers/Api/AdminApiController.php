@@ -42,6 +42,8 @@ class AdminApiController extends Controller
         $payload = [
             'id' => (int) $admin->id,
             'username' => $admin->username,
+            'name' => $admin->name,
+            'email' => $admin->email,
             'role' => $admin->role,
             'iat' => time(),
             'exp' => time() + (int) config('varman.jwt_exp', 86400),
@@ -55,7 +57,10 @@ class AdminApiController extends Controller
             'success' => true,
             'token' => $token,
             'user' => [
+                'id' => (int) $admin->id,
                 'username' => $admin->username,
+                'name' => $admin->name,
+                'email' => $admin->email,
                 'role' => $admin->role,
             ],
         ]);
