@@ -35,9 +35,6 @@ if (env('APP_ENV') === 'production') {
     if ($defaults['jwt_secret'] === 'varman-constructions-dev-secret-key-2024-do-not-use-in-prod') {
         throw new \Exception('JWT_SECRET must be set to a secure random value in production.');
     }
-    if ($defaults['admin_default_pass'] === 'varman@2024') {
-        throw new \Exception('ADMIN_DEFAULT_PASS must be changed from the default in production.');
-    }
 }
 
 return $defaults;
