@@ -16,7 +16,6 @@ Route::middleware('api.headers')->group(function () {
     Route::post('/quote', [PublicApiController::class, 'quote']);
     Route::post('/analytics/track', [PublicApiController::class, 'analyticsTrack']);
     Route::post('/security/alert', [PublicApiController::class, 'securityAlert']);
-    Route::get('/site-content', [PublicApiController::class, 'siteContent']);
 
     Route::prefix('admin')->group(function () {
         Route::post('/login', [AdminApiController::class, 'login']);

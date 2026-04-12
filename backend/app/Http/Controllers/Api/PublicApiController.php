@@ -38,9 +38,7 @@ class PublicApiController extends Controller
             'size_stone',
         ];
 
-        // Build CASE-based ordering (works in both MySQL and SQLite)
-        $cases = collect($preferredOrder)->map(fn ($id, $i) => "WHEN id = '{$id}' THEN {$i}")->implode(' ');
-        $orderSql = "CASE {$cases} ELSE " . count($preferredOrder) . " END";
+        $orderSql = "FIELD(id, '" . implode("','", $preferredOrder) . "')";
         $rows = DB::table('products')
             ->where('active', 1)
             ->orderByRaw($orderSql)
@@ -114,9 +112,8 @@ class PublicApiController extends Controller
         $adminEmailBody = "New Contact Form Submission:\n\nName: {$name}\nEmail: {$email}\nPhone: {$phone}\nMaterial: {$material}\nProject Location: {$projectLocation}\n\nMessage:\n{$message}\n\nWhatsApp (Admin): {$whatsappAdminUrl}\nWhatsApp (User): {$whatsappUserUrl}\n";
         $emailSentAdmin = $this->support->sendEmailNotification('New Contact Form - Varman Constructions', $adminEmailBody);
 
-        $reference = gmdate('Ymd-His');
-        $userEmailHtml = $this->support->buildClientThankYouEmail($name, $material, $projectLocation, $message, $reference);
-        $emailSentUser = $this->support->sendEmailNotification('Thank you for contacting Varman Constructions', $userEmailHtml, $email, true);
+        $userEmailBody = "Hi {$name},\n\nThank you for contacting VARMAN CONSTRUCTIONS!\n\nWe received your inquiry and our team will get back to you shortly.\n\nSummary:\nMaterial: {$material}\nProject Location: {$projectLocation}\nMessage: {$message}\n\nRegards,\nVARMAN CONSTRUCTIONS\nhttps://varmanconstructions.in";
+        $emailSentUser = $this->support->sendEmailNotification('Thanks for contacting Varman Constructions', $userEmailBody, $email);
 
         return response()->json([
             'success' => true,
@@ -217,20 +214,5 @@ class PublicApiController extends Controller
         $this->support->logSecurityEvent($type, $path, $ip, $userAgent, 'HIGH');
 
         return response()->json(['success' => true, 'fakeToken' => '8d9a8f9a8d9a8f...']);
-    }
-
-    public function siteContent(): JsonResponse
-    {
-        $settings = DB::table('site_settings')
-            ->where('group', 'like', 'component_%')
-            ->get();
-
-        $components = [];
-        foreach ($settings as $s) {
-            $componentKey = str_replace('component_', '', $s->group);
-            $components[$componentKey][$s->key] = $s->value;
-        }
-
-        return response()->json(['components' => $components]);
     }
 }

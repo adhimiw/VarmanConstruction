@@ -8,40 +8,46 @@ use Illuminate\Support\Facades\Hash;
 
 class CreateAdminUser extends Command
 {
-    protected $signature = 'admin:create
-                            {username? : Admin username}
-                            {--password= : Admin password (will prompt if not provided)}';
-
-    protected $description = 'Create or update an admin user';
+    protected $signature = 'make:admin
+        {--username= : Admin username}
+        {--password= : Admin password}
+        {--role=admin : Role (admin or super_admin)}';
+    protected $description = 'Create an admin user';
 
     public function handle(): int
     {
-        $username = $this->argument('username')
-            ?? $this->ask('Enter admin username', 'admin');
+        $username = $this->option('username') ?: $this->ask('Username');
+        $password = $this->option('password') ?: $this->secret('Password');
+        $role = $this->option('role');
 
-        $password = $this->option('password')
-            ?? $this->secret('Enter admin password');
-
-        if (strlen($password) < 8) {
-            $this->error('Password must be at least 8 characters.');
-            return 1;
+        if (!$username || !$password) {
+            $this->error('Username and password are required.');
+            return self::FAILURE;
         }
 
-        $exists = DB::table('admin_users')->where('username', $username)->exists();
+        if (DB::table('admin_users')->where('username', $username)->exists()) {
+            $this->error("Admin user '{$username}' already exists.");
+            return self::FAILURE;
+        }
 
-        DB::table('admin_users')->updateOrInsert(
-            ['username' => $username],
-            [
-                'password_hash' => Hash::make($password),
-                'role' => 'admin',
-            ]
-        );
+        if (strlen($password) < 6) {
+            $this->error('Password must be at least 6 characters.');
+            return self::FAILURE;
+        }
 
-        $this->info($exists
-            ? "Admin user '{$username}' password updated."
-            : "Admin user '{$username}' created."
-        );
+        if (!in_array($role, ['admin', 'super_admin'])) {
+            $this->error("Invalid role. Use 'admin' or 'super_admin'.");
+            return self::FAILURE;
+        }
 
-        return 0;
+        DB::table('admin_users')->insert([
+            'username' => $username,
+            'password_hash' => Hash::make($password),
+            'role' => $role,
+        ]);
+
+        $this->info("Admin user '{$username}' created successfully with role '{$role}'.");
+
+        return self::SUCCESS;
     }
 }

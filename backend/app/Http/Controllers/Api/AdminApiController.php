@@ -163,8 +163,8 @@ class AdminApiController extends Controller
                 $images[] = [
                     'filename' => $file,
                     'path' => $dir === $uploadDir
-                        ? '/assets/uploads/'.$file
-                        : '/assets/'.$file,
+                        ? rtrim((string) config('varman.uploads_url'), '/').'/'.$file
+                        : './assets/'.$file,
                     'size' => $stat['size'],
                     'uploadedAt' => gmdate('c', (int) $stat['mtime']),
                 ];

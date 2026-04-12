@@ -221,8 +221,10 @@ class VarmanSeeder extends Seeder
             'active' => 1,
         ], $faqs);
 
-        if (DB::table('faqs')->count() === 0) {
-            DB::table('faqs')->insert($rows);
-        }
+        DB::table('faqs')->upsert(
+            $rows,
+            ['question'],
+            ['answer', 'category', 'active']
+        );
     }
 }

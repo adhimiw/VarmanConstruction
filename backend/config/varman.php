@@ -31,10 +31,4 @@ if (is_file($overridePath)) {
     }
 }
 
-if (env('APP_ENV') === 'production') {
-    if ($defaults['jwt_secret'] === 'varman-constructions-dev-secret-key-2024-do-not-use-in-prod') {
-        throw new \Exception('JWT_SECRET must be set to a secure random value in production.');
-    }
-}
-
 return $defaults;

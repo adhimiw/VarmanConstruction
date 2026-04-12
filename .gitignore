@@ -1,9 +1,22 @@
-nul
-.playwright-mcp/
-.vscode/
-node_modules/
+# Ignore everything at root
+/*
+
+# Only track varman-react project
+!varman-react/
+!.gitignore
+
+# Inside varman-react, ignore these
+varman-react/.vscode/
+varman-react/node_modules/
+varman-react/backend/node_modules/
+varman-react/backend/.env
+varman-react/backend/vendor/
+varman-react/frontend/node_modules/
+varman-react/test_mcp.docx
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
 *.log
-.env
-.env.backup
-.env.production
-test_mcp.docx

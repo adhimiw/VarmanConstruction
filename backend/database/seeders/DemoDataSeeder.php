@@ -343,6 +343,7 @@ class DemoDataSeeder extends Seeder
 
     private function seedComponentContent(): void
     {
+        // Skip if component settings already exist
         if (DB::table('site_settings')->where('group', 'like', 'component_%')->count() > 0) return;
 
         $components = [
