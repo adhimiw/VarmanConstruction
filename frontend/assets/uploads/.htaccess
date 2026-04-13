@@ -1,5 +1,0 @@
-Options -Indexes
-<FilesMatch "\.php$">
-    Order allow,deny
-    Deny from all
-</FilesMatch>
