@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         // IP tracking / visitor sessions
-        Schema::create('visitor_sessions', function (Blueprint $table) {
+        Schema::create('visitors', function (Blueprint $table) {
             $table->id();
             $table->string('session_id', 100)->unique();
             $table->string('ip_address', 45);
@@ -22,38 +22,36 @@ return new class extends Migration
             $table->string('os', 50)->nullable();
             $table->string('referrer', 500)->nullable();
             $table->string('landing_page', 500)->nullable();
-            $table->unsignedInteger('page_views')->default(1);
+            $table->unsignedInteger('pages_viewed')->default(1);
             $table->unsignedInteger('duration_seconds')->default(0);
-            $table->timestamp('first_visit_at');
-            $table->timestamp('last_activity_at');
+            $table->timestamp('first_visit_at')->nullable();
+            $table->timestamp('last_activity_at')->nullable();
             $table->boolean('is_bot')->default(false);
+            $table->index('ip_address');
+            $table->index('last_activity_at');
         });
 
         // Page view tracking (detailed)
-        Schema::create('page_views', function (Blueprint $table) {
+        Schema::create('visitor_page_views', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('visitor_session_id')->nullable()->constrained('visitor_sessions')->nullOnDelete();
+            $table->unsignedBigInteger('visitor_id');
             $table->string('path', 500);
             $table->string('title', 300)->nullable();
-            $table->string('ip_address', 45);
-            $table->string('referrer', 500)->nullable();
-            $table->unsignedInteger('time_on_page')->default(0);
-            $table->timestamp('viewed_at');
+            $table->timestamp('viewed_at')->nullable();
+            $table->foreign('visitor_id')->references('id')->on('visitors')->onDelete('cascade');
         });
 
         // Activity log for admin audit trail
         Schema::create('activity_logs', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('admin_user_id')->nullable();
-            $table->string('action', 100); // login, logout, create, update, delete, view
-            $table->string('entity_type', 50)->nullable(); // product, faq, contact, quote, setting
+            $table->string('action', 100);
+            $table->string('admin_username', 100)->nullable();
+            $table->string('entity_type', 100)->nullable();
             $table->string('entity_id', 100)->nullable();
             $table->text('description')->nullable();
-            $table->json('old_values')->nullable();
-            $table->json('new_values')->nullable();
-            $table->string('ip_address', 45)->nullable();
-            $table->string('user_agent', 500)->nullable();
-            $table->timestamp('created_at');
+            $table->string('ip_address', 100)->nullable();
+            $table->timestamps();
+            $table->index('created_at');
         });
 
         // CMS Pages for content management
@@ -134,7 +132,7 @@ return new class extends Migration
         Schema::dropIfExists('site_settings');
         Schema::dropIfExists('cms_pages');
         Schema::dropIfExists('activity_logs');
-        Schema::dropIfExists('page_views');
-        Schema::dropIfExists('visitor_sessions');
+        Schema::dropIfExists('visitor_page_views');
+        Schema::dropIfExists('visitors');
     }
 };

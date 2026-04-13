@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('visitor_sessions', function (Blueprint $table) {
+        Schema::table('visitors', function (Blueprint $table) {
             $table->string('country_code', 10)->nullable()->after('country');
             $table->string('timezone', 100)->nullable()->after('region');
             $table->string('org', 200)->nullable()->after('timezone');
@@ -22,7 +22,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('visitor_sessions', function (Blueprint $table) {
+        Schema::table('visitors', function (Blueprint $table) {
             $table->dropColumn([
                 'country_code', 'timezone', 'org', 'isp',
                 'latitude', 'longitude', 'browser_version', 'os_version',
