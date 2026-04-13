@@ -10,7 +10,6 @@ class VarmanSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->seedAdmin();
         $this->seedProducts();
         $this->seedFaqs();
         $this->seedSiteSettings();
