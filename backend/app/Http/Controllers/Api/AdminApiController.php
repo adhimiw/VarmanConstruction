@@ -20,6 +20,8 @@ class AdminApiController extends Controller
         $ip = $this->support->getClientIp($request);
 
         if (! $this->support->checkRateLimit('login:'.$ip, 5, 900)) {
+            $this->support->logSecurityEvent('login_rate_limited', '/api/admin/login', $ip, (string) ($request->userAgent() ?? ''), 'HIGH');
+
             return response()->json(['error' => 'Too many login attempts, please try again later.'], 429);
         }
 
@@ -33,15 +35,63 @@ class AdminApiController extends Controller
 
         $admin = DB::table('admin_users')->where('username', $username)->first();
 
+        // Check if account is locked
+        if ($admin && $admin->locked_until && strtotime($admin->locked_until) > time()) {
+            $remaining = strtotime($admin->locked_until) - time();
+            $minutes = max(1, (int) ceil($remaining / 60));
+
+            $this->support->logSecurityEvent('login_locked_account', '/api/admin/login', $ip, (string) ($request->userAgent() ?? ''), 'CRITICAL');
+
+            return response()->json(['error' => "Account locked. Try again in {$minutes} minute(s)."], 423);
+        }
+
+        // Unlock account if lockout has expired
+        if ($admin && $admin->locked_until && strtotime($admin->locked_until) <= time()) {
+            DB::table('admin_users')->where('id', $admin->id)->update([
+                'failed_login_attempts' => 0,
+                'locked_until' => null,
+            ]);
+            $admin->failed_login_attempts = 0;
+            $admin->locked_until = null;
+        }
+
         if (! $admin || ! Hash::check($password, $admin->password_hash)) {
-            usleep(100000);
+            usleep(300000); // 300ms delay to slow brute force
+
+            // Track failed attempt per account
+            if ($admin) {
+                $newAttempts = (int) ($admin->failed_login_attempts ?? 0) + 1;
+                $maxAttempts = 5;
+                $lockDuration = 900; // 15 minutes
+
+                $updates = ['failed_login_attempts' => $newAttempts];
+
+                if ($newAttempts >= $maxAttempts) {
+                    $updates['locked_until'] = gmdate('Y-m-d H:i:s', time() + $lockDuration);
+                }
+
+                DB::table('admin_users')->where('id', $admin->id)->update($updates);
+
+                $this->support->logSecurityEvent('login_failed', '/api/admin/login', $ip, (string) ($request->userAgent() ?? ''), $newAttempts >= $maxAttempts ? 'CRITICAL' : 'HIGH');
+            } else {
+                $this->support->logSecurityEvent('login_failed_unknown_user', '/api/admin/login', $ip, (string) ($request->userAgent() ?? ''), 'HIGH');
+            }
 
             return response()->json(['error' => 'Invalid credentials'], 401);
         }
 
+        // Successful login - reset counters
+        DB::table('admin_users')->where('id', $admin->id)->update([
+            'failed_login_attempts' => 0,
+            'locked_until' => null,
+            'last_login_at' => gmdate('Y-m-d H:i:s'),
+        ]);
+
         $payload = [
             'id' => (int) $admin->id,
             'username' => $admin->username,
+            'name' => $admin->name,
+            'email' => $admin->email,
             'role' => $admin->role,
             'iat' => time(),
             'exp' => time() + (int) config('varman.jwt_exp', 86400),
@@ -49,14 +99,94 @@ class AdminApiController extends Controller
 
         $token = $this->support->issueToken($payload);
 
+        $this->support->logActivity('login', $admin->username, 'admin_user', (string) $admin->id, 'Admin login successful', $ip);
+
         return response()->json([
             'success' => true,
             'token' => $token,
+            'must_change_password' => (bool) ($admin->must_change_password ?? false),
             'user' => [
+                'id' => (int) $admin->id,
                 'username' => $admin->username,
+                'name' => $admin->name,
+                'email' => $admin->email,
                 'role' => $admin->role,
             ],
         ]);
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        $admin = $request->attributes->get('admin_user');
+        $ip = $this->support->getClientIp($request);
+        $this->support->logActivity('logout', $admin['username'] ?? 'unknown', 'admin_user', (string) ($admin['id'] ?? 0), 'Admin logout', $ip);
+
+        return response()->json(['success' => true, 'message' => 'Logged out successfully']);
+    }
+
+    public function changePassword(Request $request): JsonResponse
+    {
+        $admin = $request->attributes->get('admin_user');
+        $data = $this->support->payload($request);
+        $currentPassword = (string) ($data['current_password'] ?? '');
+        $newPassword = (string) ($data['new_password'] ?? '');
+
+        if ($currentPassword === '' || $newPassword === '') {
+            return response()->json(['error' => 'Current and new password required'], 400);
+        }
+
+        // Validate password complexity
+        $passwordErrors = $this->validatePasswordStrength($newPassword);
+        if ($passwordErrors !== []) {
+            return response()->json(['error' => implode(' ', $passwordErrors)], 400);
+        }
+
+        $adminRow = DB::table('admin_users')->where('id', $admin['id'])->first();
+
+        if (! $adminRow || ! Hash::check($currentPassword, $adminRow->password_hash)) {
+            return response()->json(['error' => 'Current password is incorrect'], 401);
+        }
+
+        if (Hash::check($newPassword, $adminRow->password_hash)) {
+            return response()->json(['error' => 'New password must be different from current password'], 400);
+        }
+
+        DB::table('admin_users')->where('id', $admin['id'])->update([
+            'password_hash' => Hash::make($newPassword),
+            'must_change_password' => false,
+        ]);
+
+        $ip = $this->support->getClientIp($request);
+        $this->support->logActivity('change_password', $admin['username'] ?? 'unknown', 'admin_user', (string) $admin['id'], 'Password changed', $ip);
+
+        return response()->json(['success' => true, 'message' => 'Password changed successfully']);
+    }
+
+    private function validatePasswordStrength(string $password): array
+    {
+        $errors = [];
+
+        if (strlen($password) < 12) {
+            $errors[] = 'Password must be at least 12 characters.';
+        }
+
+        if (! preg_match('/[A-Z]/', $password)) {
+            $errors[] = 'Password must contain at least one uppercase letter.';
+        }
+
+        if (! preg_match('/[a-z]/', $password)) {
+            $errors[] = 'Password must contain at least one lowercase letter.';
+        }
+
+        if (! preg_match('/[0-9]/', $password)) {
+            $errors[] = 'Password must contain at least one number.';
+        }
+
+        if (! preg_match('/[^A-Za-z0-9]/', $password)) {
+            $errors[] = 'Password must contain at least one special character.';
+        }
+
+        return $errors;
     }
 
     public function verify(Request $request): JsonResponse
@@ -163,8 +293,8 @@ class AdminApiController extends Controller
                 $images[] = [
                     'filename' => $file,
                     'path' => $dir === $uploadDir
-                        ? rtrim((string) config('varman.uploads_url'), '/').'/'.$file
-                        : './assets/'.$file,
+                        ? '/assets/uploads/'.$file
+                        : '/assets/'.$file,
                     'size' => $stat['size'],
                     'uploadedAt' => gmdate('c', (int) $stat['mtime']),
                 ];
@@ -473,5 +603,423 @@ class AdminApiController extends Controller
             'analytics' => $this->support->analytics(),
             'securityEvents' => DB::table('security_logs')->orderByDesc('id')->limit(50)->get(),
         ]);
+    }
+
+    // ─── Admin Users ───────────────────────────────────────────────────────────
+
+    public function adminUsers(Request $request): JsonResponse
+    {
+        $users = DB::table('admin_users')
+            ->select('id', 'username', 'name', 'email', 'role')
+            ->get();
+
+        return response()->json(['users' => $users]);
+    }
+
+    public function storeAdminUser(Request $request): JsonResponse
+    {
+        $data      = $this->support->payload($request);
+        $username  = strtolower(trim((string) ($data['username'] ?? '')));
+        $password  = (string) ($data['password'] ?? '');
+        $name      = $this->support->sanitizeInput($data['name'] ?? '', 100);
+        $email     = $this->support->sanitizeInput($data['email'] ?? '', 200);
+        $role      = in_array($data['role'] ?? '', ['admin', 'editor'], true) ? $data['role'] : 'admin';
+
+        if ($username === '' || $password === '') {
+            return response()->json(['error' => 'Username and password required'], 400);
+        }
+
+        $passwordErrors = $this->validatePasswordStrength($password);
+        if ($passwordErrors !== []) {
+            return response()->json(['error' => implode(' ', $passwordErrors)], 400);
+        }
+
+        if (DB::table('admin_users')->where('username', $username)->exists()) {
+            return response()->json(['error' => 'Username already exists'], 400);
+        }
+
+        $admin = $request->attributes->get('admin_user');
+        $id = DB::table('admin_users')->insertGetId([
+            'username'      => $username,
+            'name'          => $name,
+            'email'         => $email,
+            'password_hash' => Hash::make($password),
+            'role'          => $role,
+        ]);
+
+        $this->support->logActivity('create admin user', $admin['username'] ?? 'system', 'admin_user', (string) $id, "Created admin: {$username}", $this->support->getClientIp($request));
+
+        return response()->json([
+            'success' => true,
+            'user'    => DB::table('admin_users')->select('id', 'username', 'name', 'email', 'role')->where('id', $id)->first(),
+        ]);
+    }
+
+    public function updateAdminUser(Request $request, int $id): JsonResponse
+    {
+        $user = DB::table('admin_users')->where('id', $id)->first();
+
+        if (! $user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        $data    = $this->support->payload($request);
+        $updates = [];
+
+        if (isset($data['name'])) {
+            $updates['name'] = $this->support->sanitizeInput($data['name'], 100);
+        }
+
+        if (isset($data['email'])) {
+            $updates['email'] = $this->support->sanitizeInput($data['email'], 200);
+        }
+
+        if (isset($data['role']) && in_array($data['role'], ['admin', 'editor'], true)) {
+            $updates['role'] = $data['role'];
+        }
+
+        if (! empty($data['password'])) {
+            $passwordErrors = $this->validatePasswordStrength((string) $data['password']);
+            if ($passwordErrors !== []) {
+                return response()->json(['error' => implode(' ', $passwordErrors)], 400);
+            }
+            $updates['password_hash'] = Hash::make((string) $data['password']);
+        }
+
+        if ($updates === []) {
+            return response()->json(['error' => 'No fields to update'], 400);
+        }
+
+        DB::table('admin_users')->where('id', $id)->update($updates);
+
+        $admin = $request->attributes->get('admin_user');
+        $this->support->logActivity('update admin user', $admin['username'] ?? 'system', 'admin_user', (string) $id, "Updated admin: {$user->username}", $this->support->getClientIp($request));
+
+        return response()->json([
+            'success' => true,
+            'user'    => DB::table('admin_users')->select('id', 'username', 'name', 'email', 'role')->where('id', $id)->first(),
+        ]);
+    }
+
+    public function deleteAdminUser(Request $request, int $id): JsonResponse
+    {
+        $admin = $request->attributes->get('admin_user');
+        $currentUserId = (int) ($admin['id'] ?? 0);
+
+        if ($currentUserId === $id) {
+            return response()->json(['error' => 'Cannot delete your own account'], 400);
+        }
+
+        $user = DB::table('admin_users')->where('id', $id)->first();
+
+        if (! $user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        DB::table('admin_users')->where('id', $id)->delete();
+
+        $this->support->logActivity('delete admin user', $admin['username'] ?? 'system', 'admin_user', (string) $id, "Deleted admin: {$user->username}", $this->support->getClientIp($request));
+
+        return response()->json(['success' => true, 'message' => 'Admin user deleted']);
+    }
+
+    // ─── CRM Leads ─────────────────────────────────────────────────────────────
+
+    public function leads(Request $request): JsonResponse
+    {
+        $perPage = min((int) ($request->query('per_page', 15)), 100);
+        $page    = max(1, (int) $request->query('page', 1));
+        $status  = $request->query('status', '');
+        $search  = trim((string) $request->query('search', ''));
+
+        $query = DB::table('leads')->orderByDesc('id');
+
+        if ($status !== '') {
+            $query->where('status', $status);
+        }
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('company', 'like', "%{$search}%");
+            });
+        }
+
+        $total = $query->count();
+        $leads = $query->forPage($page, $perPage)->get();
+
+        return response()->json([
+            'leads' => [
+                'data'  => $leads,
+                'total' => $total,
+            ],
+        ]);
+    }
+
+    public function storeLead(Request $request): JsonResponse
+    {
+        $data = $this->support->payload($request);
+        $name = $this->support->sanitizeInput($data['name'] ?? '', 100);
+
+        if ($name === '') {
+            return response()->json(['error' => 'Name required'], 400);
+        }
+
+        $id = DB::table('leads')->insertGetId([
+            'name'       => $name,
+            'email'      => $this->support->sanitizeInput($data['email'] ?? '', 200),
+            'phone'      => $this->support->sanitizeInput($data['phone'] ?? '', 20),
+            'company'    => $this->support->sanitizeInput($data['company'] ?? '', 200),
+            'source'     => $this->support->sanitizeInput($data['source'] ?? '', 100),
+            'status'     => in_array($data['status'] ?? '', ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost'], true) ? $data['status'] : 'new',
+            'notes'      => $this->support->sanitizeInput($data['notes'] ?? '', 2000),
+            'value'      => is_numeric($data['value'] ?? null) ? (float) $data['value'] : null,
+            'created_at' => $this->support->utcTimestamp(),
+            'updated_at' => $this->support->utcTimestamp(),
+        ]);
+
+        $admin = $request->attributes->get('admin_user');
+        $this->support->logActivity('create lead', $admin['username'] ?? 'system', 'lead', (string) $id, "Created lead: {$name}", $this->support->getClientIp($request));
+
+        return response()->json(['success' => true, 'lead' => DB::table('leads')->where('id', $id)->first()]);
+    }
+
+    public function updateLead(Request $request, int $id): JsonResponse
+    {
+        $lead = DB::table('leads')->where('id', $id)->first();
+
+        if (! $lead) {
+            return response()->json(['error' => 'Lead not found'], 404);
+        }
+
+        $data    = $this->support->payload($request);
+        $updates = ['updated_at' => $this->support->utcTimestamp()];
+
+        foreach (['name' => 100, 'email' => 200, 'phone' => 20, 'company' => 200, 'source' => 100, 'notes' => 2000] as $field => $max) {
+            if (array_key_exists($field, $data)) {
+                $updates[$field] = $this->support->sanitizeInput($data[$field], $max);
+            }
+        }
+
+        if (isset($data['status']) && in_array($data['status'], ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost'], true)) {
+            $updates['status'] = $data['status'];
+        }
+
+        if (array_key_exists('value', $data)) {
+            $updates['value'] = is_numeric($data['value']) ? (float) $data['value'] : null;
+        }
+
+        DB::table('leads')->where('id', $id)->update($updates);
+
+        $admin = $request->attributes->get('admin_user');
+        $this->support->logActivity('update lead', $admin['username'] ?? 'system', 'lead', (string) $id, "Updated lead: {$lead->name}", $this->support->getClientIp($request));
+
+        return response()->json(['success' => true, 'lead' => DB::table('leads')->where('id', $id)->first()]);
+    }
+
+    public function deleteLead(Request $request, int $id): JsonResponse
+    {
+        $lead = DB::table('leads')->where('id', $id)->first();
+
+        if (! $lead) {
+            return response()->json(['error' => 'Lead not found'], 404);
+        }
+
+        DB::table('leads')->where('id', $id)->delete();
+
+        $admin = $request->attributes->get('admin_user');
+        $this->support->logActivity('delete lead', $admin['username'] ?? 'system', 'lead', (string) $id, "Deleted lead: {$lead->name}", $this->support->getClientIp($request));
+
+        return response()->json(['success' => true, 'message' => 'Lead deleted']);
+    }
+
+    // ─── Visitors ──────────────────────────────────────────────────────────────
+
+    public function visitors(Request $request): JsonResponse
+    {
+        $perPage = min((int) ($request->query('per_page', 20)), 100);
+        $page    = max(1, (int) $request->query('page', 1));
+        $search  = trim((string) $request->query('search', ''));
+
+        $query = DB::table('visitors')->orderByDesc('last_activity_at');
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('ip_address', 'like', "%{$search}%")
+                  ->orWhere('country', 'like', "%{$search}%")
+                  ->orWhere('city', 'like', "%{$search}%");
+            });
+        }
+
+        $total    = $query->count();
+        $visitors = $query->forPage($page, $perPage)->get();
+
+        return response()->json([
+            'visitors' => [
+                'data'  => $visitors,
+                'total' => $total,
+            ],
+        ]);
+    }
+
+    public function visitorDetail(int $id): JsonResponse
+    {
+        $visitor = DB::table('visitors')->where('id', $id)->first();
+
+        if (! $visitor) {
+            return response()->json(['error' => 'Visitor not found'], 404);
+        }
+
+        $pageViews = DB::table('visitor_page_views')
+            ->where('visitor_id', $id)
+            ->orderByDesc('viewed_at')
+            ->limit(50)
+            ->get();
+
+        return response()->json(['visitor' => $visitor, 'page_views' => $pageViews]);
+    }
+
+    // ─── Activity & Security Logs ──────────────────────────────────────────────
+
+    public function activityLogs(Request $request): JsonResponse
+    {
+        $perPage = min((int) ($request->query('per_page', 30)), 100);
+        $page    = max(1, (int) $request->query('page', 1));
+
+        $total = DB::table('activity_logs')->count();
+        $logs  = DB::table('activity_logs')
+            ->orderByDesc('id')
+            ->forPage($page, $perPage)
+            ->get();
+
+        return response()->json([
+            'logs' => [
+                'data'  => $logs,
+                'total' => $total,
+            ],
+        ]);
+    }
+
+    public function securityLogs(Request $request): JsonResponse
+    {
+        $perPage = min((int) ($request->query('per_page', 30)), 100);
+        $page    = max(1, (int) $request->query('page', 1));
+
+        $total = DB::table('security_logs')->count();
+        $logs  = DB::table('security_logs')
+            ->orderByDesc('id')
+            ->forPage($page, $perPage)
+            ->get()
+            ->map(fn ($row) => [
+                'id'             => $row->id,
+                'action'         => $row->type,
+                'admin_username' => null,
+                'ip_address'     => $row->ip,
+                'description'    => trim("{$row->path} | {$row->user_agent}"),
+                'severity'       => $row->severity,
+                'created_at'     => $row->timestamp,
+            ]);
+
+        return response()->json([
+            'logs' => [
+                'data'  => $logs,
+                'total' => $total,
+            ],
+        ]);
+    }
+
+    // ─── CMS Components (Site Editor) ─────────────────────────────────────────
+
+    public function cmsComponents(): JsonResponse
+    {
+        $settings = DB::table('site_settings')
+            ->where('group', 'like', 'component_%')
+            ->get();
+
+        $components = [];
+
+        foreach ($settings as $s) {
+            $componentKey = str_replace('component_', '', $s->group);
+            $components[$componentKey][$s->key] = $s->value;
+        }
+
+        return response()->json(['components' => $components]);
+    }
+
+    public function updateCmsComponent(Request $request): JsonResponse
+    {
+        $data      = $this->support->payload($request);
+        $component = $this->support->sanitizeInput($data['component'] ?? '', 100);
+        $fields    = $data['data'] ?? [];
+
+        if ($component === '' || ! is_array($fields)) {
+            return response()->json(['error' => 'component and data required'], 400);
+        }
+
+        $group = 'component_'.$component;
+
+        foreach ($fields as $key => $value) {
+            $key   = $this->support->sanitizeInput((string) $key, 100);
+            $value = is_array($value) ? json_encode($value) : $this->support->sanitizeInput((string) $value, 5000);
+
+            if ($key === '') {
+                continue;
+            }
+
+            $existing = DB::table('site_settings')->where('group', $group)->where('key', $key)->first();
+
+            if ($existing) {
+                DB::table('site_settings')->where('group', $group)->where('key', $key)->update(['value' => $value]);
+            } else {
+                DB::table('site_settings')->insert(['group' => $group, 'key' => $key, 'value' => $value, 'type' => 'text', 'label' => ucfirst(str_replace('_', ' ', $key))]);
+            }
+        }
+
+        $admin = $request->attributes->get('admin_user');
+        $this->support->logActivity('update component', $admin['username'] ?? 'system', 'component', $component, "Updated site component: {$component}", $this->support->getClientIp($request));
+
+        return response()->json(['success' => true]);
+    }
+
+    // ─── CMS Settings ─────────────────────────────────────────────────────────
+
+    public function cmsSettings(): JsonResponse
+    {
+        $settings = DB::table('site_settings')
+            ->where('group', 'not like', 'component_%')
+            ->get();
+
+        return response()->json(['settings' => $settings]);
+    }
+
+    public function updateCmsSettings(Request $request): JsonResponse
+    {
+        $data     = $this->support->payload($request);
+        $settings = $data['settings'] ?? [];
+
+        if (! is_array($settings)) {
+            return response()->json(['error' => 'settings must be an object'], 400);
+        }
+
+        foreach ($settings as $key => $value) {
+            $key   = $this->support->sanitizeInput((string) $key, 100);
+            $value = $this->support->sanitizeInput((string) $value, 5000);
+
+            if ($key === '') {
+                continue;
+            }
+
+            DB::table('site_settings')
+                ->where('key', $key)
+                ->where('group', 'not like', 'component_%')
+                ->update(['value' => $value]);
+        }
+
+        $admin = $request->attributes->get('admin_user');
+        $this->support->logActivity('update settings', $admin['username'] ?? 'system', 'settings', null, 'Updated site settings', $this->support->getClientIp($request));
+
+        return response()->json(['success' => true]);
     }
 }
