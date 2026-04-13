@@ -1,22 +1,22 @@
-# Ignore everything at root
-/*
-
-# Only track varman-react project
-!varman-react/
+# Track core project folders
+!frontend/
+!backend/
+!docker-compose.yml
 !.gitignore
 
-# Inside varman-react, ignore these
-varman-react/.vscode/
-varman-react/node_modules/
-varman-react/backend/node_modules/
-varman-react/backend/.env
-varman-react/backend/vendor/
-varman-react/frontend/node_modules/
-varman-react/test_mcp.docx
+# Standard Ignores
+node_modules/
+backend/node_modules/
+backend/vendor/
+backend/.env
+frontend/node_modules/
+frontend/dist/
+.vscode/
 
-# OS files
+# OS/Logs
 .DS_Store
 Thumbs.db
-
-# Logs
 *.log
+
+# Ignore EVERYTHING else at root level to keep the workspace clean
+/*

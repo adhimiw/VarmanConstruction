@@ -1,0 +1,15 @@
+# Varman Constructions - React SPA
+# API routing handled by Apache vhost config
+
+RewriteEngine On
+RewriteBase /
+
+# Preserve Authorization header
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# SPA fallback (skip API and real files)
+RewriteCond %{REQUEST_URI} !^/api
+RewriteCond %{REQUEST_URI} !^/assets
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ /index.html [L]
