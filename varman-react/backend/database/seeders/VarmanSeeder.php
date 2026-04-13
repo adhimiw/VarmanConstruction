@@ -27,6 +27,9 @@ class VarmanSeeder extends Seeder
             'username' => (string) config('varman.admin_default_user'),
             'password_hash' => Hash::make((string) config('varman.admin_default_pass')),
             'role' => 'admin',
+            'name' => 'Super Admin',
+            'email' => (string) config('varman.admin_email'),
+            'must_change_password' => true,
         ]);
     }
 

@@ -20,6 +20,8 @@ class AdminApiController extends Controller
         $ip = $this->support->getClientIp($request);
 
         if (! $this->support->checkRateLimit('login:'.$ip, 5, 900)) {
+            $this->support->logSecurityEvent('login_rate_limited', '/api/admin/login', $ip, (string) ($request->userAgent() ?? ''), 'HIGH');
+
             return response()->json(['error' => 'Too many login attempts, please try again later.'], 429);
         }
 
@@ -33,11 +35,57 @@ class AdminApiController extends Controller
 
         $admin = DB::table('admin_users')->where('username', $username)->first();
 
+        // Check if account is locked
+        if ($admin && $admin->locked_until && strtotime($admin->locked_until) > time()) {
+            $remaining = strtotime($admin->locked_until) - time();
+            $minutes = max(1, (int) ceil($remaining / 60));
+
+            $this->support->logSecurityEvent('login_locked_account', '/api/admin/login', $ip, (string) ($request->userAgent() ?? ''), 'CRITICAL');
+
+            return response()->json(['error' => "Account locked. Try again in {$minutes} minute(s)."], 423);
+        }
+
+        // Unlock account if lockout has expired
+        if ($admin && $admin->locked_until && strtotime($admin->locked_until) <= time()) {
+            DB::table('admin_users')->where('id', $admin->id)->update([
+                'failed_login_attempts' => 0,
+                'locked_until' => null,
+            ]);
+            $admin->failed_login_attempts = 0;
+            $admin->locked_until = null;
+        }
+
         if (! $admin || ! Hash::check($password, $admin->password_hash)) {
-            usleep(100000);
+            usleep(300000); // 300ms delay to slow brute force
+
+            // Track failed attempt per account
+            if ($admin) {
+                $newAttempts = (int) ($admin->failed_login_attempts ?? 0) + 1;
+                $maxAttempts = 5;
+                $lockDuration = 900; // 15 minutes
+
+                $updates = ['failed_login_attempts' => $newAttempts];
+
+                if ($newAttempts >= $maxAttempts) {
+                    $updates['locked_until'] = gmdate('Y-m-d H:i:s', time() + $lockDuration);
+                }
+
+                DB::table('admin_users')->where('id', $admin->id)->update($updates);
+
+                $this->support->logSecurityEvent('login_failed', '/api/admin/login', $ip, (string) ($request->userAgent() ?? ''), $newAttempts >= $maxAttempts ? 'CRITICAL' : 'HIGH');
+            } else {
+                $this->support->logSecurityEvent('login_failed_unknown_user', '/api/admin/login', $ip, (string) ($request->userAgent() ?? ''), 'HIGH');
+            }
 
             return response()->json(['error' => 'Invalid credentials'], 401);
         }
+
+        // Successful login - reset counters
+        DB::table('admin_users')->where('id', $admin->id)->update([
+            'failed_login_attempts' => 0,
+            'locked_until' => null,
+            'last_login_at' => gmdate('Y-m-d H:i:s'),
+        ]);
 
         $payload = [
             'id' => (int) $admin->id,
@@ -56,6 +104,7 @@ class AdminApiController extends Controller
         return response()->json([
             'success' => true,
             'token' => $token,
+            'must_change_password' => (bool) ($admin->must_change_password ?? false),
             'user' => [
                 'id' => (int) $admin->id,
                 'username' => $admin->username,
@@ -64,6 +113,80 @@ class AdminApiController extends Controller
                 'role' => $admin->role,
             ],
         ]);
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        $admin = $request->attributes->get('admin_user');
+        $ip = $this->support->getClientIp($request);
+        $this->support->logActivity('logout', $admin['username'] ?? 'unknown', 'admin_user', (string) ($admin['id'] ?? 0), 'Admin logout', $ip);
+
+        return response()->json(['success' => true, 'message' => 'Logged out successfully']);
+    }
+
+    public function changePassword(Request $request): JsonResponse
+    {
+        $admin = $request->attributes->get('admin_user');
+        $data = $this->support->payload($request);
+        $currentPassword = (string) ($data['current_password'] ?? '');
+        $newPassword = (string) ($data['new_password'] ?? '');
+
+        if ($currentPassword === '' || $newPassword === '') {
+            return response()->json(['error' => 'Current and new password required'], 400);
+        }
+
+        // Validate password complexity
+        $passwordErrors = $this->validatePasswordStrength($newPassword);
+        if ($passwordErrors !== []) {
+            return response()->json(['error' => implode(' ', $passwordErrors)], 400);
+        }
+
+        $adminRow = DB::table('admin_users')->where('id', $admin['id'])->first();
+
+        if (! $adminRow || ! Hash::check($currentPassword, $adminRow->password_hash)) {
+            return response()->json(['error' => 'Current password is incorrect'], 401);
+        }
+
+        if (Hash::check($newPassword, $adminRow->password_hash)) {
+            return response()->json(['error' => 'New password must be different from current password'], 400);
+        }
+
+        DB::table('admin_users')->where('id', $admin['id'])->update([
+            'password_hash' => Hash::make($newPassword),
+            'must_change_password' => false,
+        ]);
+
+        $ip = $this->support->getClientIp($request);
+        $this->support->logActivity('change_password', $admin['username'] ?? 'unknown', 'admin_user', (string) $admin['id'], 'Password changed', $ip);
+
+        return response()->json(['success' => true, 'message' => 'Password changed successfully']);
+    }
+
+    private function validatePasswordStrength(string $password): array
+    {
+        $errors = [];
+
+        if (strlen($password) < 12) {
+            $errors[] = 'Password must be at least 12 characters.';
+        }
+
+        if (! preg_match('/[A-Z]/', $password)) {
+            $errors[] = 'Password must contain at least one uppercase letter.';
+        }
+
+        if (! preg_match('/[a-z]/', $password)) {
+            $errors[] = 'Password must contain at least one lowercase letter.';
+        }
+
+        if (! preg_match('/[0-9]/', $password)) {
+            $errors[] = 'Password must contain at least one number.';
+        }
+
+        if (! preg_match('/[^A-Za-z0-9]/', $password)) {
+            $errors[] = 'Password must contain at least one special character.';
+        }
+
+        return $errors;
     }
 
     public function verify(Request $request): JsonResponse
@@ -506,8 +629,9 @@ class AdminApiController extends Controller
             return response()->json(['error' => 'Username and password required'], 400);
         }
 
-        if (strlen($password) < 8) {
-            return response()->json(['error' => 'Password must be at least 8 characters'], 400);
+        $passwordErrors = $this->validatePasswordStrength($password);
+        if ($passwordErrors !== []) {
+            return response()->json(['error' => implode(' ', $passwordErrors)], 400);
         }
 
         if (DB::table('admin_users')->where('username', $username)->exists()) {
@@ -555,8 +679,9 @@ class AdminApiController extends Controller
         }
 
         if (! empty($data['password'])) {
-            if (strlen((string) $data['password']) < 8) {
-                return response()->json(['error' => 'Password must be at least 8 characters'], 400);
+            $passwordErrors = $this->validatePasswordStrength((string) $data['password']);
+            if ($passwordErrors !== []) {
+                return response()->json(['error' => implode(' ', $passwordErrors)], 400);
             }
             $updates['password_hash'] = Hash::make((string) $data['password']);
         }

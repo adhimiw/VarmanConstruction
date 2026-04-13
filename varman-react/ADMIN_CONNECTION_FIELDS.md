@@ -45,7 +45,7 @@ The JWT token now includes all admin user fields:
 ```json
 {
   "username": "admin",
-  "password": "admin123"
+  "password": "YOUR_SECURE_PASSWORD"
 }
 ```
 
@@ -150,7 +150,7 @@ The frontend `AuthContext.jsx` now properly stores:
 | Field | Value |
 |-------|-------|
 | **Username** | admin |
-| **Password** | admin123 |
+| **Password** | *Configure in .env or via Tinker* |
 | **Name** | Administrator |
 | **Email** | admin@varmanconstructions.in |
 | **Role** | admin |

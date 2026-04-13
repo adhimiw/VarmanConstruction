@@ -23,6 +23,8 @@ Route::middleware('api.headers')->group(function () {
 
         Route::middleware('admin.token')->group(function () {
             Route::get('/verify', [AdminApiController::class, 'verify']);
+            Route::post('/logout', [AdminApiController::class, 'logout']);
+            Route::post('/change-password', [AdminApiController::class, 'changePassword']);
             Route::post('/upload', [AdminApiController::class, 'upload']);
             Route::delete('/upload/{filename}', [AdminApiController::class, 'deleteUpload']);
             Route::get('/images', [AdminApiController::class, 'images']);

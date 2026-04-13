@@ -436,7 +436,6 @@ class VarmanApiSupport
             // Don't break the request if tracking fails
         }
     }
-    }
 
     public function payload(Request $request): array
     {

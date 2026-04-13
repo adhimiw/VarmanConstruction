@@ -290,7 +290,7 @@ MAIL_FROM_NAME="Varman Constructions"
 # ===== CUSTOM CONFIG (varman.php) =====
 JWT_SECRET=CHANGE_THIS_TO_A_STRONG_64_CHAR_RANDOM_STRING
 ADMIN_DEFAULT_USER=admin
-ADMIN_DEFAULT_PASS=varman@2024
+ADMIN_DEFAULT_PASS=YOUR_SECURE_ADMIN_PASSWORD
 ADMIN_EMAIL=testing@adhithanr.space
 ADMIN_WHATSAPP=917708484811
 
@@ -364,12 +364,12 @@ echo "✅ Laravel setup complete"
 cd "$BACKEND_DIR"
 
 # Create admin user (uses custom artisan command)
-php artisan make:admin --username=admin --password='varman@2024' --role=admin
+php artisan make:admin --username=admin --password='YOUR_SECURE_PASSWORD' --role=admin
 
 echo "✅ Admin user created"
 echo "   Login at: https://gray-hamster-669595.hostingersite.com/admin"
 echo "   Username: admin"
-echo "   Password: varman@2024"
+echo "   Password: YOUR_SECURE_PASSWORD"
 ```
 
 ---
@@ -411,7 +411,7 @@ curl -s "https://gray-hamster-669595.hostingersite.com/api/products" | head -c 2
 # Test admin login
 curl -s -X POST "https://gray-hamster-669595.hostingersite.com/api/admin/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"varman@2024"}'
+  -d '{"username":"admin","password":"YOUR_SECURE_PASSWORD"}'
 # Expected: {"token":"eyJ..."}
 
 # Test frontend loads
