@@ -176,11 +176,15 @@ class VarmanApiSupport
         try {
             if ($isHtml) {
                 Mail::html($body, function ($message) use ($recipient, $subject) {
-                    $message->to($recipient)->subject($subject);
+                    $message->to($recipient)
+                            ->subject($subject)
+                            ->replyTo(config('varman.admin_email'));
                 });
             } else {
                 Mail::raw($body, function ($message) use ($recipient, $subject) {
-                    $message->to($recipient)->subject($subject);
+                    $message->to($recipient)
+                            ->subject($subject)
+                            ->replyTo(config('varman.admin_email'));
                 });
             }
 
