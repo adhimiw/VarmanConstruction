@@ -42,7 +42,7 @@ Create the `site/` directory and clone into it:
 cd ~/domains/varmanconstructions.in
 mkdir -p site
 cd site
-git clone -b varman-react-deploy --single-branch git@github.com:adhimiw/private-deploy.git .
+git clone -b main --single-branch git@github.com:adhimiw/VarmanConstruction.git .
 ```
 
 ---
@@ -51,15 +51,15 @@ git clone -b varman-react-deploy --single-branch git@github.com:adhimiw/private-
 
 On your **local machine**:
 ```bash
-git clone -b varman-react-deploy git@github.com:adhimiw/private-deploy.git
-cd private-deploy/varman-react/frontend
+git clone -b main git@github.com:adhimiw/VarmanConstruction
+cd VarmanConstruction/frontend
 npm install
 npm run build
 ```
 
 Upload the build output into the server's `backend/public/`:
 ```bash
-scp -P 65002 -r dist/* u244089748@145.79.210.59:/home/u244089748/domains/varmanconstructions.in/site/varman-react/backend/public/
+scp -P 65002 -r dist/* u244089748@145.79.210.59:/home/u244089748/domains/varmanconstructions.in/site/backend/public/
 ```
 
 ---
@@ -70,8 +70,8 @@ Run these on the server to set up path variables:
 ```bash
 DOMAIN_ROOT=/home/u244089748/domains/varmanconstructions.in
 SITE_DIR="$DOMAIN_ROOT/site"
-BACKEND_DIR="$SITE_DIR/varman-react/backend"
-FRONTEND_DIR="$SITE_DIR/varman-react/frontend"
+BACKEND_DIR="$SITE_DIR/backend"
+FRONTEND_DIR="$SITE_DIR/frontend"
 PUBLIC_DIR="$BACKEND_DIR/public"
 PUBLIC_HTML="$DOMAIN_ROOT/public_html"
 
@@ -166,8 +166,12 @@ LOG_CHANNEL=stack
 LOG_STACK=single
 LOG_LEVEL=error
 
-DB_CONNECTION=sqlite
-
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=your_hostinger_db_name
+DB_USERNAME=your_hostinger_db_user
+DB_PASSWORD=your_hostinger_db_password
 CACHE_STORE=file
 SESSION_DRIVER=file
 SESSION_LIFETIME=120
@@ -213,10 +217,7 @@ cd "$BACKEND_DIR"
 # Install PHP dependencies
 composer install --no-dev --optimize-autoloader --no-interaction
 
-# Create SQLite database
-touch database/database.sqlite
-
-# Run migrations
+# Run migrations (This will create tables in your MySQL database)
 php artisan migrate --force
 
 # Seed default data (products, FAQs, admin user)
@@ -230,7 +231,6 @@ php artisan view:cache
 
 # Set permissions
 chmod -R 775 storage bootstrap/cache
-chmod 664 database/database.sqlite
 chmod 600 .env
 ```
 
@@ -262,7 +262,7 @@ chmod 755 "$PUBLIC_DIR/assets/uploads"
 
 **Default admin login:**
 - **Username:** `admin`
-- **Password:** whatever you set in `ADMIN_DEFAULT_PASS` (default: `varman@2024`)
+- **Password:** whatever you set in `ADMIN_DEFAULT_PASS` (default: `Varman@Admin2026!`)
 
 > ⚠️ Change the default password immediately after first login.
 
@@ -273,14 +273,12 @@ echo "👉 https://varmanconstructions.in"
 
 ---
 
-## 🔒 Security Notes
+## 🔒 Security & Feature Notes
 
 - `.env` has `chmod 600` — only the owner can read it
 - `APP_KEY` auto-generated via `php artisan key:generate`
 - `JWT_SECRET` auto-generated via `random_bytes(32)` — never uses dev default in production
-- `APP_DEBUG=false` — no stack traces exposed
-- Laravel `public/.htaccess` blocks direct access to PHP files outside the entry point
-- Uploads directory blocks PHP execution via `.htaccess`
+- **IP Geolocation:** The backend natively supports tracking IP geolocations via `ip-api.com`. It correctly checks `CF-Connecting-IP` (if you use Cloudflare via Hostinger) and `X-Real-IP` (Hostinger's Nginx Proxy) to ensure it grabs the real user IP, not the proxy server's IP.
 - Admin API routes protected by JWT token middleware (`RequireAdminToken`)
 - CORS headers set via `ApiHeaders` middleware
 
@@ -294,10 +292,10 @@ ssh -p 65002 u244089748@145.79.210.59
 
 # Pull latest code
 cd ~/domains/varmanconstructions.in/site
-git pull origin varman-react-deploy
+git pull origin main
 
 # Update backend
-cd varman-react/backend
+cd backend
 composer install --no-dev --optimize-autoloader --no-interaction
 php artisan migrate --force
 php artisan optimize:clear
@@ -314,9 +312,9 @@ echo "✅ Backend updated!"
 For frontend changes, rebuild locally then upload:
 ```bash
 # Local machine
-cd varman-react/frontend
+cd frontend
 npm run build
-scp -P 65002 -r dist/* u244089748@145.79.210.59:/home/u244089748/domains/varmanconstructions.in/site/varman-react/backend/public/
+scp -P 65002 -r dist/* u244089748@145.79.210.59:/home/u244089748/domains/varmanconstructions.in/site/backend/public/
 ```
 
 ---
@@ -339,8 +337,8 @@ scp -P 65002 -r dist/* u244089748@145.79.210.59:/home/u244089748/domains/varmanc
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/admin/login` | Login, returns JWT token |
+| POST | `/api/admin/change-password` | Change admin password |
 | GET | `/api/admin/verify` | Verify token validity |
-| GET | `/api/admin/stats` | Dashboard statistics |
 | GET/POST/PUT/DELETE | `/api/admin/products` | CRUD products |
 | GET/POST/PUT/DELETE | `/api/admin/faqs` | CRUD FAQs |
 | GET/PUT/DELETE | `/api/admin/contacts` | Manage contacts |
@@ -348,6 +346,18 @@ scp -P 65002 -r dist/* u244089748@145.79.210.59:/home/u244089748/domains/varmanc
 | POST | `/api/admin/upload` | Upload image |
 | DELETE | `/api/admin/upload/{filename}` | Delete image |
 | GET | `/api/admin/images` | List uploaded images |
+
+### Admin CMS Analytics & Tracking
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/admin/cms/dashboard` | Dashboard stats, visitor trends, geo-data |
+| GET | `/api/admin/cms/visitors` | List tracked IP visitors |
+| GET | `/api/admin/cms/visitors/{id}`| Detail view of visitor & page views |
+| GET/POST/PUT/DELETE | `/api/admin/cms/leads` | Manage CRM leads |
+| GET | `/api/admin/cms/activity-logs` | User action tracking log |
+| GET | `/api/admin/cms/security-logs`| Failed login attempts log |
+| GET/POST | `/api/admin/cms/components` | Manage dynamic UI content blocks |
+| GET/POST | `/api/admin/cms/settings` | Global SEO and site settings |
 
 ---
 
@@ -360,12 +370,12 @@ set -e
 
 DOMAIN_ROOT=/home/u244089748/domains/varmanconstructions.in
 SITE_DIR="$DOMAIN_ROOT/site"
-BACKEND_DIR="$SITE_DIR/varman-react/backend"
-FRONTEND_DIR="$SITE_DIR/varman-react/frontend"
+BACKEND_DIR="$SITE_DIR/backend"
+FRONTEND_DIR="$SITE_DIR/frontend"
 
 echo "=== Pulling latest code ==="
 cd "$SITE_DIR"
-git pull origin varman-react-deploy
+git pull origin main
 
 echo "=== Updating backend ==="
 cd "$BACKEND_DIR"
@@ -382,7 +392,7 @@ cp -r "$FRONTEND_DIR/public/assets/"* "$BACKEND_DIR/public/assets/"
 echo ""
 echo "=== ✅ Server updated! ==="
 echo "To update frontend, run locally:"
-echo "  cd varman-react/frontend && npm run build"
+echo "  cd frontend && npm run build"
 echo "  scp -P 65002 -r dist/* u244089748@145.79.210.59:$BACKEND_DIR/public/"
 ```
 
