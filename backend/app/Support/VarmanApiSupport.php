@@ -575,24 +575,65 @@ HTML;
             return [];
         }
 
+        // Try API 1: ip-api.com
         try {
             $url = 'http://ip-api.com/json/' . urlencode($ip) . '?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,query';
             $response = Http::timeout(3)->get($url);
-
-            if (! $response->successful()) {
-                return [];
+            
+            if ($response->successful() && is_array($data = $response->json()) && ($data['status'] ?? '') === 'success') {
+                return $data; // Already exactly matches our required format
             }
+        } catch (\Throwable) {}
 
-            $data = $response->json();
-
-            if (! is_array($data) || ($data['status'] ?? '') !== 'success') {
-                return [];
+        // Try API 2: ipapi.co
+        try {
+            $response = Http::timeout(3)->get('https://ipapi.co/' . urlencode($ip) . '/json/');
+            
+            if ($response->successful() && is_array($data = $response->json()) && !isset($data['error'])) {
+                return [
+                    'country' => $data['country_name'] ?? null,
+                    'countryCode' => $data['country_code'] ?? null,
+                    'regionName' => $data['region'] ?? null,
+                    'city' => $data['city'] ?? null,
+                    'lat' => $data['latitude'] ?? null,
+                    'lon' => $data['longitude'] ?? null,
+                    'timezone' => $data['timezone'] ?? null,
+                    'org' => $data['org'] ?? null,
+                    'isp' => $data['org'] ?? null,
+                ];
             }
+        } catch (\Throwable) {}
 
-            return $data;
-        } catch (\Throwable) {
-            return [];
-        }
+        // Try API 3: ipinfo.io
+        try {
+            $response = Http::timeout(3)->get('https://ipinfo.io/' . urlencode($ip) . '/json');
+            
+            if ($response->successful() && is_array($data = $response->json()) && !isset($data['error'])) {
+                $lat = null;
+                $lon = null;
+                if (isset($data['loc'])) {
+                    $parts = explode(',', $data['loc']);
+                    if (count($parts) === 2) {
+                        $lat = trim($parts[0]);
+                        $lon = trim($parts[1]);
+                    }
+                }
+                
+                return [
+                    'country' => $data['country'] ?? null, // ipinfo only gives code
+                    'countryCode' => $data['country'] ?? null,
+                    'regionName' => $data['region'] ?? null,
+                    'city' => $data['city'] ?? null,
+                    'lat' => $lat,
+                    'lon' => $lon,
+                    'timezone' => $data['timezone'] ?? null,
+                    'org' => $data['org'] ?? null,
+                    'isp' => $data['org'] ?? null,
+                ];
+            }
+        } catch (\Throwable) {}
+
+        return [];
     }
 
     public function payload(Request $request): array
