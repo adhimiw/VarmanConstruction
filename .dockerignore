@@ -1,0 +1,28 @@
+# Git and IDE
+.git
+.gitignore
+.vscode
+*.md
+
+# Frontend build artifacts and dependencies
+frontend/node_modules/
+frontend/dist/
+
+# Backend dependencies and environment
+backend/node_modules/
+backend/vendor/
+backend/.env
+
+# Local runtime data
+storage/
+assets/uploads/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker itself
+docker-compose*.yml
+Dockerfile
+.dockerignore
+

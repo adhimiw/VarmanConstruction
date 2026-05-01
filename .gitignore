@@ -1,8 +1,13 @@
-# Track core project folders
+# Ignore EVERYTHING at root level to keep the workspace clean
+/*
+
+# Un-ignore core project folders
 !frontend/
 !backend/
+!docker/
 !docker-compose.yml
-!.gitignore
+!Dockerfile
+!.dockerignore
 
 # Standard Ignores
 node_modules/
@@ -17,6 +22,3 @@ frontend/dist/
 .DS_Store
 Thumbs.db
 *.log
-
-# Ignore EVERYTHING else at root level to keep the workspace clean
-/*
