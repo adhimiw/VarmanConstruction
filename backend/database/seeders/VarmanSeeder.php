@@ -10,6 +10,7 @@ class VarmanSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->seedAdmin();
         $this->seedProducts();
         $this->seedFaqs();
         $this->seedSiteSettings();
@@ -22,14 +23,24 @@ class VarmanSeeder extends Seeder
             return;
         }
 
+        $password = (string) config('varman.admin_default_pass');
+
+        if ($password === '') {
+            $password = 'Varman@Admin2026!';
+            $this->command?->warn("No ADMIN_DEFAULT_PASS set. Using default: {$password}");
+            $this->command?->warn('Please change this password immediately after first login.');
+        }
+
         DB::table('admin_users')->insert([
-            'username' => (string) config('varman.admin_default_user'),
-            'password_hash' => Hash::make((string) config('varman.admin_default_pass')),
+            'username' => (string) config('varman.admin_default_user', 'admin'),
+            'password_hash' => Hash::make($password),
             'role' => 'admin',
             'name' => 'Super Admin',
             'email' => (string) config('varman.admin_email'),
             'must_change_password' => true,
         ]);
+
+        $this->command?->info('Admin user created successfully.');
     }
 
     private function seedProducts(): void

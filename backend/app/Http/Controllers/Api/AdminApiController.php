@@ -743,12 +743,16 @@ class AdminApiController extends Controller
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('company', 'like', "%{$search}%");
+                  ->orWhere('location', 'like', "%{$search}%");
             });
         }
 
         $total = $query->count();
-        $leads = $query->forPage($page, $perPage)->get();
+        $leads = $query->forPage($page, $perPage)->get()->map(function ($lead) {
+            $lead->company = $lead->location ?? '';
+            $lead->value = $lead->estimated_value;
+            return $lead;
+        });
 
         return response()->json([
             'leads' => [
@@ -768,22 +772,29 @@ class AdminApiController extends Controller
         }
 
         $id = DB::table('leads')->insertGetId([
-            'name'       => $name,
-            'email'      => $this->support->sanitizeInput($data['email'] ?? '', 200),
-            'phone'      => $this->support->sanitizeInput($data['phone'] ?? '', 20),
-            'company'    => $this->support->sanitizeInput($data['company'] ?? '', 200),
-            'source'     => $this->support->sanitizeInput($data['source'] ?? '', 100),
-            'status'     => in_array($data['status'] ?? '', ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost'], true) ? $data['status'] : 'new',
-            'notes'      => $this->support->sanitizeInput($data['notes'] ?? '', 2000),
-            'value'      => is_numeric($data['value'] ?? null) ? (float) $data['value'] : null,
-            'created_at' => $this->support->utcTimestamp(),
-            'updated_at' => $this->support->utcTimestamp(),
+            'name'            => $name,
+            'email'           => $this->support->sanitizeInput($data['email'] ?? '', 200),
+            'phone'           => $this->support->sanitizeInput($data['phone'] ?? '', 20),
+            'location'        => $this->support->sanitizeInput($data['company'] ?? $data['location'] ?? '', 200),
+            'source'          => $this->support->sanitizeInput($data['source'] ?? '', 100),
+            'status'          => in_array($data['status'] ?? '', ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost'], true) ? $data['status'] : 'new',
+            'notes'           => $this->support->sanitizeInput($data['notes'] ?? '', 2000),
+            'estimated_value' => is_numeric($data['value'] ?? $data['estimated_value'] ?? null) ? (float) ($data['value'] ?? $data['estimated_value']) : null,
+            'created_at'      => $this->support->utcTimestamp(),
+            'updated_at'      => $this->support->utcTimestamp(),
         ]);
 
         $admin = $request->attributes->get('admin_user');
         $this->support->logActivity('create lead', $admin['username'] ?? 'system', 'lead', (string) $id, "Created lead: {$name}", $this->support->getClientIp($request));
 
-        return response()->json(['success' => true, 'lead' => DB::table('leads')->where('id', $id)->first()]);
+        $lead = DB::table('leads')->where('id', $id)->first();
+        // Map DB columns back to frontend field names for compatibility
+        if ($lead) {
+            $lead->company = $lead->location ?? '';
+            $lead->value = $lead->estimated_value;
+        }
+
+        return response()->json(['success' => true, 'id' => $id, 'lead' => $lead]);
     }
 
     public function updateLead(Request $request, int $id): JsonResponse
@@ -797,18 +808,27 @@ class AdminApiController extends Controller
         $data    = $this->support->payload($request);
         $updates = ['updated_at' => $this->support->utcTimestamp()];
 
-        foreach (['name' => 100, 'email' => 200, 'phone' => 20, 'company' => 200, 'source' => 100, 'notes' => 2000] as $field => $max) {
+        foreach (['name' => 100, 'email' => 200, 'phone' => 20, 'source' => 100, 'notes' => 2000] as $field => $max) {
             if (array_key_exists($field, $data)) {
                 $updates[$field] = $this->support->sanitizeInput($data[$field], $max);
             }
+        }
+
+        // Map frontend 'company' to DB 'location'
+        if (array_key_exists('company', $data)) {
+            $updates['location'] = $this->support->sanitizeInput($data['company'], 200);
+        }
+        if (array_key_exists('location', $data)) {
+            $updates['location'] = $this->support->sanitizeInput($data['location'], 200);
         }
 
         if (isset($data['status']) && in_array($data['status'], ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost'], true)) {
             $updates['status'] = $data['status'];
         }
 
-        if (array_key_exists('value', $data)) {
-            $updates['value'] = is_numeric($data['value']) ? (float) $data['value'] : null;
+        if (array_key_exists('value', $data) || array_key_exists('estimated_value', $data)) {
+            $val = $data['value'] ?? $data['estimated_value'] ?? null;
+            $updates['estimated_value'] = is_numeric($val) ? (float) $val : null;
         }
 
         DB::table('leads')->where('id', $id)->update($updates);
@@ -816,7 +836,13 @@ class AdminApiController extends Controller
         $admin = $request->attributes->get('admin_user');
         $this->support->logActivity('update lead', $admin['username'] ?? 'system', 'lead', (string) $id, "Updated lead: {$lead->name}", $this->support->getClientIp($request));
 
-        return response()->json(['success' => true, 'lead' => DB::table('leads')->where('id', $id)->first()]);
+        $updated = DB::table('leads')->where('id', $id)->first();
+        if ($updated) {
+            $updated->company = $updated->location ?? '';
+            $updated->value = $updated->estimated_value;
+        }
+
+        return response()->json(['success' => true, 'lead' => $updated]);
     }
 
     public function deleteLead(Request $request, int $id): JsonResponse
@@ -1021,5 +1047,74 @@ class AdminApiController extends Controller
         $this->support->logActivity('update settings', $admin['username'] ?? 'system', 'settings', null, 'Updated site settings', $this->support->getClientIp($request));
 
         return response()->json(['success' => true]);
+    }
+
+    // ─── CMS Dashboard Aggregate ──────────────────────────────────────────────
+
+    public function cmsDashboard(): JsonResponse
+    {
+        $counts = [
+            'products'             => (int) DB::table('products')->count(),
+            'contacts'             => (int) DB::table('contacts')->count(),
+            'quotes'               => (int) DB::table('quotes')->count(),
+            'faqs'                 => (int) DB::table('faqs')->count(),
+            'leads'                => (int) DB::table('leads')->count(),
+            'visitors'             => (int) DB::table('visitors')->count(),
+            'pages'                => (int) DB::table('site_settings')->where('group', 'like', 'component_%')->distinct('group')->count('group'),
+            'unread_notifications' => (int) DB::table('contacts')->where('read', 0)->count(),
+        ];
+
+        $recentContacts = DB::table('contacts')->orderByDesc('created_at')->limit(5)->get(['name', 'email', 'material', 'created_at']);
+        $recentQuotes   = DB::table('quotes')->orderByDesc('created_at')->limit(5)->get(['name', 'materials', 'status', 'created_at']);
+        $recentActivity = DB::table('activity_logs')->orderByDesc('created_at')->limit(5)->get(['action', 'admin_username', 'description', 'created_at']);
+
+        // Visitor trend: last 30 days from analytics_views
+        $visitorTrend = DB::table('analytics_views')
+            ->where('date', '>=', gmdate('Y-m-d', strtotime('-30 days')))
+            ->orderBy('date')
+            ->get(['date', 'views as count']);
+
+        // Device breakdown
+        $deviceBreakdown = DB::table('visitors')
+            ->selectRaw('device_type, count(*) as count')
+            ->groupBy('device_type')
+            ->orderByDesc('count')
+            ->get();
+
+        // Browser breakdown
+        $browserBreakdown = DB::table('visitors')
+            ->selectRaw('browser, count(*) as count')
+            ->groupBy('browser')
+            ->orderByDesc('count')
+            ->get();
+
+        // Country breakdown
+        $countryBreakdown = DB::table('visitors')
+            ->selectRaw('country, country_code, count(*) as count')
+            ->whereNotNull('country')
+            ->groupBy('country', 'country_code')
+            ->orderByDesc('count')
+            ->limit(10)
+            ->get();
+
+        // Top pages
+        $topPages = DB::table('visitor_page_views')
+            ->selectRaw('path, count(*) as views')
+            ->groupBy('path')
+            ->orderByDesc('views')
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'counts'             => $counts,
+            'recent_contacts'    => $recentContacts,
+            'recent_quotes'      => $recentQuotes,
+            'recent_activity'    => $recentActivity,
+            'visitor_trend'      => $visitorTrend,
+            'device_breakdown'   => $deviceBreakdown,
+            'browser_breakdown'  => $browserBreakdown,
+            'country_breakdown'  => $countryBreakdown,
+            'top_pages'          => $topPages,
+        ]);
     }
 }

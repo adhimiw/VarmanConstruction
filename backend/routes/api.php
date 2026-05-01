@@ -52,6 +52,7 @@ Route::middleware('api.headers')->group(function () {
 
             // CMS / Leads / Visitors / Logs / Site Editor / Settings
             Route::prefix('cms')->group(function () {
+                Route::get('/dashboard', [AdminApiController::class, 'cmsDashboard']);
                 Route::get('/leads', [AdminApiController::class, 'leads']);
                 Route::post('/leads', [AdminApiController::class, 'storeLead']);
                 Route::put('/leads/{id}', [AdminApiController::class, 'updateLead']);

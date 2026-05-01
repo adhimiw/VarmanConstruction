@@ -86,11 +86,22 @@ class VarmanApiSupport
 
     public function getClientIp(Request $request): string
     {
-        $forwardedFor = $request->header('X-Forwarded-For');
+        // Check Cloudflare first if Hostinger is using it
+        $cfConnectingIp = $request->header('CF-Connecting-IP');
+        if (is_string($cfConnectingIp) && $cfConnectingIp !== '') {
+            return trim($cfConnectingIp);
+        }
 
+        // Check X-Real-IP (common in Nginx/Hostinger setups)
+        $xRealIp = $request->header('X-Real-IP');
+        if (is_string($xRealIp) && $xRealIp !== '') {
+            return trim($xRealIp);
+        }
+
+        // Check standard X-Forwarded-For
+        $forwardedFor = $request->header('X-Forwarded-For');
         if (is_string($forwardedFor) && $forwardedFor !== '') {
             $parts = explode(',', $forwardedFor);
-
             return trim($parts[0]);
         }
 
@@ -379,25 +390,43 @@ class VarmanApiSupport
             $ua        = (string) ($request->userAgent() ?? '');
             $sessionId = md5($ip.'|'.$ua.'|'.gmdate('Y-m-d'));
 
-            // Parse simple device/browser from UA
+            // Parse device/browser/OS from User-Agent
             $device  = str_contains($ua, 'Mobile') ? 'mobile' : (str_contains($ua, 'Tablet') ? 'tablet' : 'desktop');
             $browser = 'Unknown';
+            $browserVersion = '';
 
-            foreach (['Chrome', 'Firefox', 'Safari', 'Edge', 'Opera'] as $b) {
-                if (str_contains($ua, $b)) {
-                    $browser = $b;
+            foreach (['Edg' => 'Edge', 'OPR' => 'Opera', 'Chrome' => 'Chrome', 'Firefox' => 'Firefox', 'Safari' => 'Safari'] as $token => $name) {
+                if (str_contains($ua, $token)) {
+                    $browser = $name;
+                    if (preg_match('/' . preg_quote($token, '/') . '[\/\s]?([\d.]+)/', $ua, $m)) {
+                        $browserVersion = $m[1];
+                    }
                     break;
                 }
             }
 
             $os = 'Unknown';
+            $osVersion = '';
 
-            foreach (['Windows', 'Mac', 'Linux', 'Android', 'iOS'] as $o) {
-                if (str_contains($ua, $o)) {
-                    $os = $o;
-                    break;
+            if (preg_match('/Windows NT ([\d.]+)/', $ua, $m)) {
+                $os = 'Windows';
+                $osVersion = $m[1];
+            } elseif (preg_match('/Mac OS X ([\d._]+)/', $ua, $m)) {
+                $os = 'Mac';
+                $osVersion = str_replace('_', '.', $m[1]);
+            } elseif (preg_match('/Android ([\d.]+)/', $ua, $m)) {
+                $os = 'Android';
+                $osVersion = $m[1];
+            } elseif (str_contains($ua, 'iPhone') || str_contains($ua, 'iPad')) {
+                $os = 'iOS';
+                if (preg_match('/OS ([\d_]+)/', $ua, $m)) {
+                    $osVersion = str_replace('_', '.', $m[1]);
                 }
+            } elseif (str_contains($ua, 'Linux')) {
+                $os = 'Linux';
             }
+
+            $isBot = (bool) preg_match('/bot|crawl|spider|slurp|mediapartners|Googlebot|Bingbot|Yahoo/i', $ua);
 
             $referrer = $this->sanitizeInput((string) ($request->header('Referer') ?? ''), 500);
             $now      = $this->utcTimestamp();
@@ -417,13 +446,30 @@ class VarmanApiSupport
                     'viewed_at'  => $now,
                 ]);
             } else {
+                // Geo-locate IP via ip-api.com (free, no key, 45 req/min)
+                $geo = $this->geolocateIp($ip);
+
                 $visitorId = DB::table('visitors')->insertGetId([
                     'session_id'       => $sessionId,
                     'ip_address'       => $ip,
+                    'user_agent'       => mb_substr($ua, 0, 500),
                     'device_type'      => $device,
                     'browser'          => $browser,
+                    'browser_version'  => $browserVersion ?: null,
                     'os'               => $os,
+                    'os_version'       => $osVersion ?: null,
+                    'is_bot'           => $isBot ? 1 : 0,
                     'referrer'         => $referrer !== '' ? $referrer : null,
+                    'landing_page'     => $this->sanitizeInput($path, 500),
+                    'country'          => $geo['country'] ?? null,
+                    'country_code'     => $geo['countryCode'] ?? null,
+                    'region'           => $geo['regionName'] ?? null,
+                    'city'             => $geo['city'] ?? null,
+                    'timezone'         => $geo['timezone'] ?? null,
+                    'isp'              => $geo['isp'] ?? null,
+                    'org'              => $geo['org'] ?? null,
+                    'latitude'         => $geo['lat'] ?? null,
+                    'longitude'        => $geo['lon'] ?? null,
                     'pages_viewed'     => 1,
                     'first_visit_at'   => $now,
                     'last_activity_at' => $now,
@@ -438,6 +484,48 @@ class VarmanApiSupport
             }
         } catch (\Throwable) {
             // Don't break the request if tracking fails
+        }
+    }
+
+    /**
+     * Look up IP geolocation via ip-api.com (free tier — no API key).
+     * Returns an associative array with country, city, etc., or empty array on failure.
+     * Skips private/localhost IPs since they can't be geolocated.
+     */
+    private function geolocateIp(string $ip): array
+    {
+        // Skip private / localhost IPs
+        if (in_array($ip, ['127.0.0.1', '::1', '0.0.0.0', ''], true) ||
+            str_starts_with($ip, '10.') ||
+            str_starts_with($ip, '192.168.') ||
+            str_starts_with($ip, '172.') ||
+            str_starts_with($ip, 'fc') ||
+            str_starts_with($ip, 'fd')) {
+            return [];
+        }
+
+        try {
+            $ctx = stream_context_create([
+                'http' => ['timeout' => 3, 'ignore_errors' => true],
+            ]);
+
+            // ip-api.com free endpoint: http only (no HTTPS on free tier)
+            $url = 'http://ip-api.com/json/' . urlencode($ip) . '?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,query';
+            $raw = @file_get_contents($url, false, $ctx);
+
+            if ($raw === false) {
+                return [];
+            }
+
+            $data = json_decode($raw, true);
+
+            if (! is_array($data) || ($data['status'] ?? '') !== 'success') {
+                return [];
+            }
+
+            return $data;
+        } catch (\Throwable) {
+            return [];
         }
     }
 

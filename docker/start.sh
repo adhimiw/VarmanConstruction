@@ -12,14 +12,15 @@ mkdir -p "$BACKEND_DIR/storage/framework/cache" \
          "$BACKEND_DIR/storage/logs" \
          "$BACKEND_DIR/bootstrap/cache"
 
-# Create SQLite database file if it doesn't exist
-touch "$ROOT_DIR/storage/varman.sqlite"
+# Ensure SQLite database file exists and is writable
+touch "$BACKEND_DIR/database/database.sqlite"
 
-# Set proper ownership for runtime directories
+# Set proper ownership for runtime directories and database
 chown -R www-data:www-data "$ROOT_DIR/storage" \
     "$ROOT_DIR/assets/uploads" \
     "$BACKEND_DIR/storage" \
-    "$BACKEND_DIR/bootstrap/cache"
+    "$BACKEND_DIR/bootstrap/cache" \
+    "$BACKEND_DIR/database"
 
 # Ensure .env exists
 if [ ! -f "$BACKEND_DIR/.env" ] && [ -f "$BACKEND_DIR/.env.example" ]; then
