@@ -298,7 +298,76 @@ class VarmanApiSupport
           </table>
         </body>
         </html>
-        HTML;
+HTML;
+    }
+
+    public function buildAdminNotificationEmail(string $title, array $details, string $message = ''): string
+    {
+        $siteName = 'VARMAN CONSTRUCTIONS';
+        $siteUrl = (string) config('app.url', 'https://varmanconstructions.in');
+
+        $rows = '';
+        foreach ($details as $label => $value) {
+            $rows .= '<tr><td style="color:#78716c;width:140px;padding:6px 0;"><strong>'.htmlspecialchars($label).':</strong></td><td style="padding:6px 0;color:#292524;">'.htmlspecialchars($value).'</td></tr>';
+        }
+
+        $messageBlock = '';
+        if ($message !== '') {
+            $messageBlock = <<<HTML
+            <div style="margin-top:20px;padding-top:20px;border-top:1px solid #e7e5e4;">
+                <h3 style="margin:0 0 10px;color:#1c1917;font-size:15px;">Message/Details:</h3>
+                <p style="margin:0;color:#57534e;font-size:14px;line-height:1.6;white-space:pre-wrap;">
+                    {htmlspecialchars($message)}
+                </p>
+            </div>
+HTML;
+        }
+
+        return <<<HTML
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+          <title>{$title}</title>
+        </head>
+        <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+                  
+                  <!-- Header -->
+                  <tr>
+                    <td style="background:#1c1917;padding:20px 32px;border-bottom:4px solid #f97316;">
+                      <h2 style="margin:0;color:#ffffff;font-size:18px;">{$title}</h2>
+                    </td>
+                  </tr>
+
+                  <!-- Body -->
+                  <tr>
+                    <td style="padding:32px;">
+                      <table cellpadding="0" cellspacing="0" width="100%" style="font-size:14px;">
+                        {$rows}
+                      </table>
+                      
+                      {$messageBlock}
+
+                      <div style="margin-top:30px;">
+                        <a href="{$siteUrl}/admin" style="display:inline-block;background:#f97316;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:6px;font-size:14px;font-weight:bold;">
+                          View in Dashboard
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+HTML;
     }
 
     public function productFromRow(array $row): array

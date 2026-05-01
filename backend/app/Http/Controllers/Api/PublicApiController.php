@@ -111,8 +111,18 @@ class PublicApiController extends Controller
         $whatsappUserMessage = "Hi {$name}, thanks for contacting VARMAN CONSTRUCTIONS! We received your inquiry for {$material}.\n\nWe will contact you shortly with details. If urgent, you can reply here.\n\nReference: ".gmdate('Ymd-His');
         $whatsappUserUrl = $userNumber !== '' ? 'https://wa.me/'.$userNumber.'?text='.rawurlencode($whatsappUserMessage) : '';
 
-        $adminEmailBody = "New Contact Form Submission:\n\nName: {$name}\nEmail: {$email}\nPhone: {$phone}\nMaterial: {$material}\nProject Location: {$projectLocation}\n\nMessage:\n{$message}\n\nWhatsApp (Admin): {$whatsappAdminUrl}\nWhatsApp (User): {$whatsappUserUrl}\n";
-        $emailSentAdmin = $this->support->sendEmailNotification('New Contact Form - Varman Constructions', $adminEmailBody);
+        $adminEmailHtml = $this->support->buildAdminNotificationEmail(
+            'New Contact Form Submission',
+            [
+                'Name' => $name,
+                'Email' => $email,
+                'Phone' => $phone,
+                'Material' => $material,
+                'Project Location' => $projectLocation,
+            ],
+            $message
+        );
+        $emailSentAdmin = $this->support->sendEmailNotification('New Contact Form - Varman Constructions', $adminEmailHtml, null, true);
 
         $reference = gmdate('Ymd-His');
         $userEmailHtml = $this->support->buildClientThankYouEmail($name, $material, $projectLocation, $message, $reference);
@@ -167,8 +177,19 @@ class PublicApiController extends Controller
         $whatsappMessage = "Hello Varman Constructions!\n\nI need a quotation for building materials.\n\n*My Details:*\nName: {$name}\nEmail: {$email}\nPhone: {$phone}\n\n*Requirements:*\nMaterials: {$materialsList}\nQuantity: {$quantity}\nTimeline: {$timeline}\n\n*Project Details:*\n{$projectDetails}";
         $whatsappUrl = 'https://wa.me/'.config('varman.admin_whatsapp', '917708484811').'?text='.rawurlencode($whatsappMessage);
 
-        $emailBody = "New Quote Request:\n\nName: {$name}\nEmail: {$email}\nPhone: {$phone}\nMaterials: {$materialsList}\nQuantity: {$quantity}\nTimeline: {$timeline}\n\nProject Details:\n{$projectDetails}\n";
-        $emailSent = $this->support->sendEmailNotification('New Quote Request - Varman Constructions', $emailBody);
+        $emailHtml = $this->support->buildAdminNotificationEmail(
+            'New Quote Request',
+            [
+                'Name' => $name,
+                'Email' => $email,
+                'Phone' => $phone,
+                'Materials' => $materialsList,
+                'Quantity' => $quantity,
+                'Timeline' => $timeline,
+            ],
+            $projectDetails
+        );
+        $emailSent = $this->support->sendEmailNotification('New Quote Request - Varman Constructions', $emailHtml, null, true);
 
         return response()->json([
             'success' => true,
