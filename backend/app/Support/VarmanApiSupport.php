@@ -5,6 +5,7 @@ namespace App\Support;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
 
@@ -313,11 +314,12 @@ HTML;
 
         $messageBlock = '';
         if ($message !== '') {
+            $safeMessage = htmlspecialchars($message);
             $messageBlock = <<<HTML
             <div style="margin-top:20px;padding-top:20px;border-top:1px solid #e7e5e4;">
                 <h3 style="margin:0 0 10px;color:#1c1917;font-size:15px;">Message/Details:</h3>
                 <p style="margin:0;color:#57534e;font-size:14px;line-height:1.6;white-space:pre-wrap;">
-                    {htmlspecialchars($message)}
+                    {$safeMessage}
                 </p>
             </div>
 HTML;
@@ -574,19 +576,14 @@ HTML;
         }
 
         try {
-            $ctx = stream_context_create([
-                'http' => ['timeout' => 3, 'ignore_errors' => true],
-            ]);
-
-            // ip-api.com free endpoint: http only (no HTTPS on free tier)
             $url = 'http://ip-api.com/json/' . urlencode($ip) . '?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,query';
-            $raw = @file_get_contents($url, false, $ctx);
+            $response = Http::timeout(3)->get($url);
 
-            if ($raw === false) {
+            if (! $response->successful()) {
                 return [];
             }
 
-            $data = json_decode($raw, true);
+            $data = $response->json();
 
             if (! is_array($data) || ($data['status'] ?? '') !== 'success') {
                 return [];
