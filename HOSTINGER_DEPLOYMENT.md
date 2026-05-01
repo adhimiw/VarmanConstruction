@@ -130,8 +130,8 @@ cat > "$PUBLIC_DIR/.htaccess" <<'HTA'
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # Send backend routes to Laravel
-    RewriteCond %{REQUEST_URI} ^/(api|sanctum|storage)(/|$) [NC]
+    # Send backend routes to Laravel (fixed to match all API paths)
+    RewriteCond %{REQUEST_URI} ^/(api|sanctum|storage) [NC]
     RewriteRule ^ index.php [L]
 
     # Frontend SPA fallback
