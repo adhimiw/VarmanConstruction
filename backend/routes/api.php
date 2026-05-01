@@ -4,7 +4,9 @@ use App\Http\Controllers\Api\AdminApiController;
 use App\Http\Controllers\Api\PublicApiController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('api.headers')->group(function () {
+$prefix = request()->is('api/*') || request()->is('api') ? 'api' : '';
+
+Route::prefix($prefix)->middleware('api.headers')->group(function () {
     Route::options('{any}', fn () => response()->noContent())->where('any', '.*');
 
     Route::get('/', [PublicApiController::class, 'root']);
