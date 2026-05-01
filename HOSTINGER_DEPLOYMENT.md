@@ -260,6 +260,7 @@ chmod 755 "$PUBLIC_DIR/assets/uploads"
 | API health check | `https://varmanconstructions.in/api/health` |
 | API products | `https://varmanconstructions.in/api/products` |
 
+
 **Default admin login:**
 - **Username:** `admin`
 - **Password:** whatever you set in `ADMIN_DEFAULT_PASS` (default: `Varman@Admin2026!`)
